@@ -1,0 +1,13 @@
+<nav class="sidebar" [class.collapsed]="collapsed">
+  @for (item of menuItems; track item.label) {
+    @if (canShowMenuItem(item)) {
+      <div class="menu-item" (click)="navigate(item.route)">
+        <i [class]="item.icon"></i>
+        @if (!collapsed) {
+          <span>{{ item.label }}</span>
+        }      
+      </div>
+    }
+  }
+  <div class="version">v1.0.0</div>
+</nav>

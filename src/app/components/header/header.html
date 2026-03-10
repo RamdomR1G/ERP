@@ -1,0 +1,28 @@
+<header class="header">
+  @if (!isLandingPage) {
+    <p-button icon="pi pi-bars" [text]="true" (onClick)="toggleSidebar.emit()" />
+  }
+  
+  <div class="docs-demo-html">
+    <div class="large grid centered square-grid">
+      <h2 class="text-xl" style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+        @if (isLandingPage) {
+          <i class="pi pi-box" style="color: #6366f1;"></i>
+        }
+        ERP System
+      </h2>
+    </div>
+  </div>
+  
+  <span class="spacer"></span>
+  
+  @if (!isLandingPage) {
+    <p-menu #menu [model]="items" [popup]="true" />
+    <p-button icon="pi pi-user" (onClick)="menu.toggle($event)" />
+  } @else {
+    <div style="display: flex; gap: 0.75rem;">
+      <p-button label="Sign In" [text]="true" styleClass="text-white" (onClick)="goToLogin()" />
+      <p-button label="Get Started" icon="pi pi-arrow-right" iconPos="right" [outlined]="true" styleClass="text-white" (onClick)="goToRegister()" />
+    </div>
+  }
+</header>

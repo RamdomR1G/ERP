@@ -1,0 +1,38 @@
+.sidebar {
+  width: 220px;
+  background: #2a2a3e;
+  color: white;
+  transition: width 0.3s ease;
+  overflow: hidden;
+  padding-top: 1rem;
+}
+
+.sidebar.collapsed { 
+  width: 60px; 
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.menu-item:hover { 
+  background: #3a3a5e; 
+}
+
+.menu-item i { 
+  font-size: 1.1rem; 
+  min-width: 20px; 
+  text-align: center; 
+}
+
+.version {
+  bottom: 1rem;
+  left: 1rem;
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
