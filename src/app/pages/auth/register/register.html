@@ -1,0 +1,45 @@
+<div class="auth-wrapper">
+  <app-header [isLandingPage]="true"></app-header>
+  <div class="register-container">
+    <p-card styleClass="register-card">
+    <ng-template pTemplate="header">
+      <div class="card-header">
+        <i class="pi pi-user-plus"></i>
+        <h2>Create Account</h2>
+        <p>Fill in the details to get started.</p>
+      </div>
+    </ng-template>
+
+    <div class="field">
+      <label for="name">Full Name</label>
+      <input id="name" type="text" pInputText [(ngModel)]="name" placeholder="John Doe" />
+    </div>
+
+    <div class="field">
+      <label for="email">Email</label>
+      <input id="email" type="email" pInputText [(ngModel)]="email" placeholder="you@example.com" />
+    </div>
+
+    <div class="field">
+      <label for="password">Password</label>
+      <p-password id="password" [(ngModel)]="password"
+                  placeholder="••••••••" [toggleMask]="true" />
+    </div>
+
+    <div class="field">
+      <label for="confirmPassword">Confirm Password</label>
+      <p-password id="confirmPassword" [(ngModel)]="confirmPassword"
+                  [feedback]="false" [toggleMask]="true" placeholder="••••••••" />
+    </div>
+
+    <ng-template pTemplate="footer">
+      <div class="card-footer">
+        <p-button label="Register" icon="pi pi-user-plus"
+                  (onClick)="onRegister()" styleClass="w-full" />
+        <p-button label="Already have an account? Sign In"
+          [text]="true" (onClick)="goToLogin()" styleClass="w-full" />
+      </div>
+    </ng-template>
+    </p-card>
+  </div>
+</div>

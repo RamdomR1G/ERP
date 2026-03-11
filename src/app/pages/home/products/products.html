@@ -1,0 +1,24 @@
+<div class="products">
+  <h2 class="page-title">Products</h2>
+
+  <div class="products-grid">
+    @for (product of products; track product.name) {
+      <div class="product-card">
+        <!-- Image area -->
+        <div class="product-image">
+          <i [class]="product.image"></i>
+        </div>
+        <!-- Info -->
+        <div class="product-body">
+          <span class="product-category">{{ product.category }}</span>
+          <h4 class="product-name">{{ product.name }}</h4>
+          <p class="product-stock">Stock: {{ product.stock }} units</p>
+          <div class="product-footer">
+            <span class="product-price">{{ product.price }}</span>
+            <p-tag [value]="product.status" [severity]="getSeverity(product.status)" />
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,92 @@
+<div class="admin">
+  <h2 class="page-title">User Management</h2>
+
+  <!-- TOTAL N CARDS -->
+  <div class="stats-grid">
+    @for (stat of stats; track stat.label) {
+      <div class="stat-card">
+        <div class="stat-icon" [style.background]="stat.color + '18'" [style.color]="stat.color">
+          <i [class]="stat.icon"></i>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">{{ stat.label }}</span>
+          <span class="stat-value">{{ stat.value }}</span>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- TABS: Users / Groups -->
+  <div class="tabs-wrapper">
+    <p-tabs value="0">
+      <p-tablist>
+        <p-tab value="0"><i class="pi pi-users"></i> Users</p-tab>
+        <p-tab value="1"><i class="pi pi-sitemap"></i> Groups</p-tab>
+      </p-tablist>
+
+      <p-tabpanels>
+
+        <!-- USERS TAB -->
+        <p-tabpanel value="0">
+          <div class="tab-header">
+            <span class="tab-subtitle">All registered users</span>
+            <p-button label="New User" icon="pi pi-user-plus" (onClick)="newUser()" />
+          </div>
+          <p-table [value]="users" [paginator]="true" [rows]="5" [tableStyle]="{'min-width':'60rem'}">
+            <ng-template pTemplate="header">
+              <tr>
+                <th>Name</th><th>Email</th><th>Role</th><th>Group</th><th>Status</th><th>Joined</th><th>Actions</th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-user>
+              <tr>
+                <td>
+                  <div class="user-cell">
+                    <div class="avatar" [style.background]="'#6366f118'" [style.color]="'#6366f1'">
+                      {{ user.name.charAt(0) }}
+                    </div>
+                    {{ user.name }}
+                  </div>
+                </td>
+                <td>{{ user.email }}</td>
+                <td>{{ user.role }}</td>
+                <td>{{ user.group }}</td>
+                <td><p-tag [value]="user.status" [severity]="getUserSeverity(user.status)" /></td>
+                <td>{{ user.joined }}</td>
+                <td>
+                  <p-button icon="pi pi-pencil" [text]="true" severity="info" size="small" />
+                  <p-button icon="pi pi-trash" [text]="true" severity="danger" size="small" />
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </p-tabpanel>
+
+        <!-- GROUPS TAB -->
+        <p-tabpanel value="1">
+          <div class="tab-header">
+            <span class="tab-subtitle">All user groups</span>
+            <p-button label="New Group" icon="pi pi-plus" severity="secondary" (onClick)="newGroup()" />
+          </div>
+          <div class="groups-grid">
+            @for (group of groups; track group.name) {
+              <div class="group-card">
+                <div class="group-icon" [style.background]="group.color + '18'" [style.color]="group.color">
+                  <i class="pi pi-sitemap"></i>
+                </div>
+                <div class="group-info">
+                  <h4 class="group-name">{{ group.name }}</h4>
+                  <p class="group-desc">{{ group.description }}</p>
+                  <span class="group-members" [style.color]="group.color">
+                    <i class="pi pi-users"></i> {{ group.members }} members
+                  </span>
+                </div>
+              </div>
+            }
+          </div>
+        </p-tabpanel>
+
+      </p-tabpanels>
+    </p-tabs>
+  </div>
+</div>

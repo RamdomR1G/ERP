@@ -1,0 +1,39 @@
+<div class="auth-wrapper">
+  <app-header [isLandingPage]="true"></app-header>
+  <div class="login-container">
+    <p-card styleClass="login-card">
+    <ng-template pTemplate="header">
+      <div class="card-header">
+        <i class="pi pi-lock"></i>
+        <h2>Sign In</h2>
+        <p>Welcome back! Please enter your credentials.</p>
+      </div>
+    </ng-template>
+
+    <div class="field">
+      <p-iftalabel>
+        <input pInputText id="email" type="email" [(ngModel)]="email"
+               (input)="validateEmail()" autocomplete="off" />
+        <label for="email">Email</label>
+      </p-iftalabel>
+    </div>
+
+    <div class="field">
+      <p-iftalabel>
+        <p-password inputId="password" [(ngModel)]="password"
+                    [feedback]="false" [toggleMask]="true" />
+        <label for="password">Password</label>
+      </p-iftalabel>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <div class="card-footer">
+        <p-button label="Sign In" icon="pi pi-sign-in"
+                  [disabled]="!isFormValid()" (onClick)="onLogin()" styleClass="w-full" />
+        <p-button label="Don't have an account? Register"
+                  [text]="true" (onClick)="goToRegister()" styleClass="w-full" />
+      </div>
+    </ng-template>
+    </p-card>
+  </div>
+</div>

@@ -1,0 +1,98 @@
+<div class="users">
+  <!-- MODAL NEW USER -->
+<p-dialog header="New User" [(visible)]="visible" [style]="{ width: '30rem' }" [modal]="true">
+  <div class="field">
+    <label for="userName">User Name</label>
+    <input pInputText id="userName" [(ngModel)]="newUserName"
+           placeholder="" class="w-full" />
+  </div>
+  <div class="field">
+    <label for="userEmail">User Email</label>
+    <input pInputText id="userEmail" [(ngModel)]="newUserEmail"
+           placeholder="@.com" class="w-full" />
+  </div>
+  <div class="field">
+    <label for="userRole">User Role</label>
+    <p-select inputId="userRole" [options]="roles" [(ngModel)]="newUserRole"
+           optionLabel="name" optionValue="name" placeholder="Select Role" appendTo="body"></p-select>
+  </div>
+  <div class="field">
+    <label for="userGroup">User Group</label>
+    <p-select inputId="userGroup" [options]="groups" [(ngModel)]="newUserGroup"
+           optionLabel="name" optionValue="name" placeholder="Select Group" appendTo="body"></p-select>
+  </div>
+  <div class="field">
+    <label for="userStatus">User Status</label>
+    <p-checkbox [(ngModel)]="newUserStatus" [binary]="true"/>
+  </div>
+  <div class="field">
+    <label for="userJoined">User Joined</label>
+    <input pInputText id="userJoined" [(ngModel)]="newUserJoined"
+           placeholder="--/--/----" class="w-full" />
+  </div>
+  <ng-template pTemplate="footer">
+    <p-button label="Cancel" severity="secondary" (onClick)="visible = false" />
+    <p-button label="Save User" icon="pi pi-check" (onClick)="saveUser()" />
+  </ng-template>
+</p-dialog>
+  <h2 class="page-title">Users Management</h2>
+
+  <!-- TOTAL N CARDS -->
+  <div class="stats-grid">
+    @for (stat of stats; track stat.label) {
+      <div class="stat-card">
+        <div class="stat-icon" [style.background]="stat.color + '18'" [style.color]="stat.color">
+          <i [class]="stat.icon"></i>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">{{ stat.label }}</span>
+          <span class="stat-value">{{ stat.value }}</span>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- USERS TABLE -->
+  <div class="table-wrapper">
+    <div class="tab-header">
+      <span class="tab-subtitle">All registered users</span>
+      @if (authService.hasPermission('user:add')) {
+        <p-button label="New User" icon="pi pi-user-plus" (onClick)="newUser()" />
+      }
+    </div>
+    <p-table [value]="users" [paginator]="true" [rows]="5" [tableStyle]="{'min-width':'60rem'}">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Name</th><th>Email</th><th>Password</th><th>Role</th><th>Group</th><th>Status</th><th>Joined</th><th>Actions</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-user>
+        <tr>
+          <td>
+            <div class="user-cell">
+              <div class="avatar" [style.background]="'#6366f118'" [style.color]="'#6366f1'">
+                {{ user.name.charAt(0) }}
+              </div>
+              {{ user.name }}
+            </div>
+          </td>
+          <td>{{ user.email }}</td>
+          <td>{{ user.password }}</td>
+          <td>{{ user.role }}</td>
+          <td>{{ user.group }}</td>
+          <td><p-tag [value]="user.status" [severity]="getUserSeverity(user.status)" /></td>
+          <td>{{ user.joined }}</td>
+          <td>
+            <p-button icon="pi-eye" [text]="true" severity="info" size="small" />
+            @if (authService.hasPermission('user:edit')) {
+              <p-button icon="pi-pencil" [text]="true" severity="info" size="small" />
+            }
+            @if (authService.hasPermission('user:delete')) {
+              <p-button icon="pi-trash" [text]="true" severity="danger" size="small" />
+            }
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>

@@ -1,0 +1,39 @@
+<div class="landing-container">
+  
+  <!-- NAVBAR -->
+  <app-header [isLandingPage]="true"></app-header>
+
+  <!-- HERO -->
+  <div class="hero">
+    <p-card styleClass="hero-card">
+      <div class="hero-content">
+        <p-tag value="New Release" severity="info" styleClass="hero-tag" />
+        <h1>Manage your business<br><span class="highlight">smarter & faster</span></h1>
+        <p>An all-in-one ERP platform to handle users, products, orders and more.</p>
+        <div class="hero-buttons">
+          <p-button label="Get Started Free" icon="pi pi-arrow-right"
+                    iconPos="right" size="large" (onClick)="goToRegister()" />
+          <p-button label="Sign In" [outlined]="true"
+                    size="large" (onClick)="goToLogin()" />
+        </div>
+      </div>
+    </p-card>
+  </div>
+
+  <!-- FEATURES -->
+  <div class="features">
+    @for (feature of features; track feature.title) {
+      <p-card styleClass="feature-card">
+        <div class="feature-content">
+          <div class="feature-icon" [style.background]="feature.color + '18'"
+               [style.color]="feature.color">
+            <i [class]="feature.icon"></i>
+          </div>
+          <h3>{{ feature.title }}</h3>
+          <p>{{ feature.description }}</p>
+        </div>
+      </p-card>
+    }
+  </div>
+
+</div>

@@ -1,0 +1,25 @@
+.auth-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+.login-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8f9fb;
+}
+.login-card { width: 420px; }
+.card-header {
+  text-align: center;
+  padding: 2rem 2rem 0;
+  color: #6366f1;
+}
+.card-header i { font-size: 2.5rem; }
+.card-header h2 { margin: 0.5rem 0 0.25rem; color: #1a1a2e; }
+.card-header p { color: #888; font-size: 0.9rem; margin: 0; }
+.field { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.25rem; }
+.field label { font-size: 0.85rem; font-weight: 600; color: #444; }
+.field input, .field p-password { width: 100%; }
+.card-footer { display: flex; flex-direction: column; gap: 0.5rem; }

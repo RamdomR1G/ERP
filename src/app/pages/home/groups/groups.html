@@ -1,0 +1,72 @@
+<div class="groups">
+
+  <!-- MODAL NEW GROUP -->
+<p-dialog header="New Group" [(visible)]="visible" [style]="{ width: '30rem' }" [modal]="true">
+  <div class="field">
+    <label for="groupName">Group Name</label>
+    <input pInputText id="groupName" [(ngModel)]="newGroupName"
+           placeholder="e.g. Marketing" class="w-full" />
+  </div>
+  <div class="field">
+    <label for="groupDesc">Description</label>
+    <input pInputText id="groupDesc" [(ngModel)]="newGroupDescription"
+           placeholder="Brief description" class="w-full" />
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button label="Cancel" severity="secondary" (onClick)="visible = false" />
+    <p-button label="Save Group" icon="pi pi-check" (onClick)="saveGroup()" />
+  </ng-template>
+</p-dialog>
+
+  <h2 class="page-title">Groups Management</h2>
+
+  <!-- TOTAL N CARDS -->
+  <div class="stats-grid">
+    @for (stat of stats; track stat.label) {
+      <div class="stat-card">
+        <div class="stat-icon" [style.background]="stat.color + '18'" [style.color]="stat.color">
+          <i [class]="stat.icon"></i>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">{{ stat.label }}</span>
+          <span class="stat-value">{{ stat.value }}</span>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- GROUPS GRID -->
+  <div class="groups-wrapper">
+    <div class="tab-header">
+      <span class="tab-subtitle">All user groups</span>
+      @if (authService.hasPermission('group:add')) {
+        <p-button label="New Group" icon="pi pi-plus" severity="secondary" (onClick)="newGroup()" />
+      }
+    </div>
+    <div class="groups-grid">
+      @for (group of groups; track group.name) {
+        <div class="group-card">
+          <div class="group-icon" [style.background]="group.color + '18'" [style.color]="group.color">
+            <i class="pi pi-sitemap"></i>
+          </div>
+          <div class="group-info">
+            <h4 class="group-name">{{ group.name }}</h4>
+            <p class="group-desc">{{ group.description }}</p>
+            <span class="group-members" [style.color]="group.color">
+              <i class="pi pi-users"></i> {{ group.members }} members
+            </span>
+          </div>
+          <div class="group-actions">
+            @if (authService.hasPermission('group:edit')) {
+              <p-button icon="pi pi-pencil" [text]="true" severity="info" size="small" />
+            }
+            @if (authService.hasPermission('group:delete')) {
+              <p-button icon="pi pi-trash" [text]="true" severity="danger" size="small" />
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>
