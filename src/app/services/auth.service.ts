@@ -12,20 +12,22 @@ export class AuthService {
     'ticket:view', 
     'ticket:edit_state', 
     'user:view', 
-    'user:edit'
+    'user:edit',
+    'users:view',
+    'ticket:add',
+    'group:add'
+
   ];
   constructor() {}
   /**
    * Actualiza el set de permisos actuales.
-   * Útil si vas a pasar el array de strings mediante la URL temporalmente 
-   * o tras un llamado a tu API.
    */
   setPermissions(permissionsArray: string[]) {
     this.currentUserPermissions = permissionsArray;
   }
   /**
    * Verifica estrictamente si el usuario posee un string de permiso específico
-   * @param permissionName el nombre de la acción, ej: 'group:add'
+   * @param permissionName el nombre de la acción.
    */
   hasPermission(permissionName: string): boolean {
     return this.currentUserPermissions.includes(permissionName);

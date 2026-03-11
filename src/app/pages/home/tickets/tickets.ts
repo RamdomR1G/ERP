@@ -10,6 +10,7 @@ import { SelectModule } from 'primeng/select';
 import { CheckboxModule } from 'primeng/checkbox';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../../services/auth.service';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -19,7 +20,7 @@ import { map } from 'rxjs/operators';
   imports: [CommonModule, 
     FormsModule, TableModule, ButtonModule, 
     TagModule, DialogModule, InputTextModule, 
-    SelectModule, CheckboxModule],
+    SelectModule, CheckboxModule, HasPermissionDirective],
   templateUrl: './tickets.html',
   styleUrl: './tickets.css',
 })

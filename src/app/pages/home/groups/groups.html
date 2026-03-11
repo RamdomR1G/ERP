@@ -40,9 +40,7 @@
   <div class="groups-wrapper">
     <div class="tab-header">
       <span class="tab-subtitle">All user groups</span>
-      @if (authService.hasPermission('group:add')) {
-        <p-button label="New Group" icon="pi pi-plus" severity="secondary" (onClick)="newGroup()" />
-      }
+      <p-button *appHasPermission="'group:add'" label="New Group" icon="pi pi-plus" severity="secondary" (onClick)="newGroup()" />
     </div>
     <div class="groups-grid">
       @for (group of groups; track group.name) {
@@ -58,12 +56,8 @@
             </span>
           </div>
           <div class="group-actions">
-            @if (authService.hasPermission('group:edit')) {
-              <p-button icon="pi pi-pencil" [text]="true" severity="info" size="small" />
-            }
-            @if (authService.hasPermission('group:delete')) {
-              <p-button icon="pi pi-trash" [text]="true" severity="danger" size="small" />
-            }
+            <p-button *appHasPermission="'group:edit'" icon="pi pi-pencil" [text]="true" severity="info" size="small" />
+            <p-button *appHasPermission="'group:delete'" icon="pi pi-trash" [text]="true" severity="danger" size="small" />
           </div>
         </div>
       }

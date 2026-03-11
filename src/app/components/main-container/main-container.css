@@ -1,5 +1,14 @@
-.main-container {
+:host {
+  display: flex;
   flex: 1;
+  width: 100%;
+}
+
+.main-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;
   padding: 1.5rem;
   overflow-y: auto;
   background: #f4f4f4;

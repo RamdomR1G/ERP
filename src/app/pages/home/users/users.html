@@ -56,9 +56,7 @@
   <div class="table-wrapper">
     <div class="tab-header">
       <span class="tab-subtitle">All registered users</span>
-      @if (authService.hasPermission('user:add')) {
-        <p-button label="New User" icon="pi pi-user-plus" (onClick)="newUser()" />
-      }
+      <p-button *appHasPermission="'user:add'" label="New User" icon="pi pi-user-plus" (onClick)="newUser()" />
     </div>
     <p-table [value]="users" [paginator]="true" [rows]="5" [tableStyle]="{'min-width':'60rem'}">
       <ng-template pTemplate="header">
@@ -83,13 +81,9 @@
           <td><p-tag [value]="user.status" [severity]="getUserSeverity(user.status)" /></td>
           <td>{{ user.joined }}</td>
           <td>
-            <p-button icon="pi-eye" [text]="true" severity="info" size="small" />
-            @if (authService.hasPermission('user:edit')) {
-              <p-button icon="pi-pencil" [text]="true" severity="info" size="small" />
-            }
-            @if (authService.hasPermission('user:delete')) {
-              <p-button icon="pi-trash" [text]="true" severity="danger" size="small" />
-            }
+            <p-button icon="pi pi-eye" [text]="true" severity="info" size="small" />
+            <p-button *appHasPermission="'user:edit'" icon="pi pi-pencil" [text]="true" severity="info" size="small" />
+            <p-button *appHasPermission="'user:delete'" icon="pi pi-trash" [text]="true" severity="danger" size="small" />
           </td>
         </tr>
       </ng-template>

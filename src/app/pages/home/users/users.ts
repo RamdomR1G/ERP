@@ -9,6 +9,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { CheckboxModule } from 'primeng/checkbox';
 import { AuthService } from '../../../services/auth.service';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-users',
@@ -16,7 +17,7 @@ import { AuthService } from '../../../services/auth.service';
   imports: [CommonModule, 
     FormsModule, TableModule, ButtonModule, 
     TagModule, DialogModule, InputTextModule, 
-    SelectModule, CheckboxModule],
+    SelectModule, CheckboxModule, HasPermissionDirective],
   templateUrl: './users.html',
   styleUrl: './users.css'
 })

@@ -8,12 +8,12 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { CommonModule } from '@angular/common';
 import { SelectModule } from 'primeng/select';
 import { AuthService } from '../../../services/auth.service';
-
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-groups',
   standalone: true,
-  imports: [ButtonModule, DialogModule, InputTextModule, FormsModule, ToggleSwitchModule, CommonModule, SelectModule],
+  imports: [ButtonModule, DialogModule, InputTextModule, FormsModule, ToggleSwitchModule, CommonModule, SelectModule, HasPermissionDirective],
   templateUrl: './groups.html',
   styleUrl: './groups.css'
 })

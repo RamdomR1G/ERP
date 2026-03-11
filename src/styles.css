@@ -1,1 +1,10 @@
 @layer primeng;
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  background-color: #f4f4f4; /* Mismo color que main-container para evitar negros */
+  font-family: var(--font-family, 'Inter', sans-serif);
+}
