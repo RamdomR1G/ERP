@@ -31,7 +31,7 @@ export class Sidebar implements OnInit {
   menuItems = [
     { label: 'Home', icon: 'pi pi-home', route: '/home', requiredPermission: null },
     { label: 'Dashboard', icon: 'pi pi-home', route: '/home/dashboard', requiredPermission: null },
-    { label: 'Products', icon: 'pi pi-box', route: '/home/products', requiredPermission: null },
+    //{ label: 'Products', icon: 'pi pi-box', route: '/home/products', requiredPermission: null },
     { label: 'Tickets', icon: 'pi pi-ticket', route: '/home/tickets', requiredPermission: 'ticket:view' },
     { label: 'Users', icon: 'pi pi-user', route: '/home/users', requiredPermission: 'users:view' },
     { label: 'Groups', icon: 'pi pi-users', route: '/home/groups', requiredPermission: 'group:view' },

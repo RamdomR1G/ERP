@@ -16,7 +16,6 @@ export class AuthService {
     'users:view',
     'ticket:add',
     'group:add'
-
   ];
   constructor() {}
   /**
