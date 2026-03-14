@@ -20,6 +20,7 @@ import { HasPermissionDirective } from '../../../directives/has-permission.direc
 
 export class GroupsComponent implements OnInit {
   authService = inject(AuthService);
+  router = inject(Router);
 
   visible: boolean = false;
   newGroupName: string = '';
@@ -36,11 +37,9 @@ export class GroupsComponent implements OnInit {
   ];
 
   // ── GROUPS ─────────────────────────────────────
-  groups = [
-    { name: 'Management', members: 2, description: 'Executive and administrative staff', color: '#6366f1' },
-    { name: 'Sales',      members: 2, description: 'Sales representatives and account managers', color: '#22c55e' },
-    { name: 'Support',    members: 2, description: 'Customer support and helpdesk team', color: '#0ea5e9' },
-  ];
+  get groups() {
+    return this.authService.getAvailableGroups();
+  }
 
   newGroup() {
     this.newGroupName = '';
@@ -55,5 +54,9 @@ export class GroupsComponent implements OnInit {
       name: this.newGroupName,
       description: this.newGroupDescription,
     });
+  }
+
+  goToDashboard(groupId: string) {
+    this.router.navigate(['/home/groups', groupId, 'dashboard']);
   }
 }

@@ -1,65 +1,93 @@
-<div class="dashboard">
-  <h2 class="page-title">Dashboard</h2>
-
-  <!-- TOTAL N CARDS -->
-  <section class="section">
-    <h3 class="section-title">Overview</h3>
-    <div class="stats-grid">
-      @for (stat of stats; track stat.label) {
-        <div class="stat-card">
-          <div class="stat-icon" [style.background]="stat.color + '18'" [style.color]="stat.color">
-            <i [class]="stat.icon"></i>
+<div class="dashboard-wrapper" style="padding: 1.5rem; background: #f8f9fb; min-height: 100%;">
+  
+  <!-- WORKSPACE SELECTION -->
+  <div class="selection-container">
+    <div class="selection-header">
+      <i class="pi pi-building header-icon"></i>
+      <h2>Welcome Back!</h2>
+      <p>Please select a workspace to continue</p>
+    </div>
+    
+    <div class="workspace-grid">
+      @for (group of authService.getAvailableGroups(); track group.id) {
+        <p-card (click)="selectGroup(group)" styleClass="workspace-card cursor-pointer hover:shadow-2 transition-all transition-duration-300">
+          <div class="workspace-content flex flex-column align-items-center justify-content-center p-4">
+            <div class="workspace-icon mb-3" [style.color]="'var(--primary-color)'">
+              <i [class]="group.icon" style="font-size: 2.5rem;"></i>
+            </div>
+            <h3 class="m-0 text-xl font-semibold">{{ group.name }}</h3>
           </div>
-          <div class="stat-info">
-            <span class="stat-label">{{ stat.label }}</span>
-            <span class="stat-value">{{ stat.value }}</span>
-          </div>
-          <div class="stat-bar" [style.background]="stat.color + '22'">
-            <div class="stat-bar-fill" [style.background]="stat.color" style="width: 65%"></div>
-          </div>
-        </div>
+        </p-card>
       }
     </div>
-  </section>
+  </div>
 
-  <!-- ADVANCE CARDS -->
-  <section class="section">
-    <h3 class="section-title">Highlights</h3>
-    <div class="advance-grid">
-      @for (adv of advances; track adv.title) {
-        <div class="advance-card">
-          <div class="advance-icon" [style.background]="adv.color + '18'" [style.color]="adv.color">
-            <i [class]="adv.icon"></i>
-          </div>
-          <div class="advance-info">
-            <span class="advance-title">{{ adv.title }}</span>
-            <p class="advance-desc">{{ adv.description }}</p>
-          </div>
-        </div>
-      }
+  <!-- COMPANY OVERVIEW -->
+  <div class="dashboard">
+    <div class="dashboard-header flex justify-content-between align-items-center mb-4">
+      <h2 class="page-title m-0">Company Overview</h2>
     </div>
-  </section>
 
-  <!-- TABLE -->
-  <section class="section">
-    <h3 class="section-title">Recent Orders</h3>
-    <div class="table-wrapper">
-      <p-table [value]="recentOrders" [tableStyle]="{'min-width': '50rem'}">
-        <ng-template pTemplate="header">
-          <tr>
-            <th>ID</th><th>Customer</th><th>Product</th><th>Status</th><th>Amount</th>
-          </tr>
-        </ng-template>
-        <ng-template pTemplate="body" let-order>
-          <tr>
-            <td>{{ order.id }}</td>
-            <td>{{ order.customer }}</td>
-            <td>{{ order.product }}</td>
-            <td><p-tag [value]="order.status" [severity]="getSeverity(order.status)" /></td>
-            <td>{{ order.amount }}</td>
-          </tr>
-        </ng-template>
-      </p-table>
-    </div>
-  </section>
+    <!-- TOTAL N CARDS -->
+    <section class="section">
+      <h3 class="section-title">Overview</h3>
+      <div class="stats-grid">
+        @for (stat of stats; track stat.label) {
+          <div class="stat-card">
+            <div class="stat-icon" [style.background]="stat.color + '18'" [style.color]="stat.color">
+              <i [class]="stat.icon"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-label">{{ stat.label }}</span>
+              <span class="stat-value">{{ stat.value }}</span>
+            </div>
+            <div class="stat-bar" [style.background]="stat.color + '22'">
+              <div class="stat-bar-fill" [style.background]="stat.color" style="width: 65%"></div>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- ADVANCE CARDS -->
+    <section class="section">
+      <h3 class="section-title">Highlights</h3>
+      <div class="advance-grid">
+        @for (adv of advances; track adv.title) {
+          <div class="advance-card">
+            <div class="advance-icon" [style.background]="adv.color + '18'" [style.color]="adv.color">
+              <i [class]="adv.icon"></i>
+            </div>
+            <div class="advance-info">
+              <span class="advance-title">{{ adv.title }}</span>
+              <p class="advance-desc">{{ adv.description }}</p>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- TABLE -->
+    <section class="section">
+      <h3 class="section-title">Recent Orders</h3>
+      <div class="table-wrapper">
+        <p-table [value]="recentOrders" [tableStyle]="{'min-width': '50rem'}">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>ID</th><th>Customer</th><th>Product</th><th>Status</th><th>Amount</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-order>
+            <tr>
+              <td>{{ order.id }}</td>
+              <td>{{ order.customer }}</td>
+              <td>{{ order.product }}</td>
+              <td><p-tag [value]="order.status" [severity]="getSeverity(order.status)" /></td>
+              <td>{{ order.amount }}</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+    </section>
+  </div>
 </div>

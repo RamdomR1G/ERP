@@ -30,7 +30,7 @@
   padding: 1.25rem;
   box-shadow: 0 1px 6px rgba(0,0,0,0.06);
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
   gap: 1rem;
 }
 .advance-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
@@ -40,3 +40,73 @@
 
 /* ── Table ── */
 .table-wrapper { background: white; border-radius: 12px; padding: 1rem; box-shadow: 0 1px 6px rgba(0,0,0,0.06); }
+
+/* ── WORKSPACE SELECTION STYLES ── */
+.selection-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: auto;
+  background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+  border-radius: 1rem;
+  padding: 2rem 2rem 3rem 2rem;
+  margin-bottom: 2rem;
+}
+
+.selection-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.selection-header h2 {
+  font-size: 2.5rem;
+  margin: 1rem 0 0.5rem 0;
+  color: #1e293b;
+  font-weight: 700;
+}
+
+.selection-header p {
+  font-size: 1.15rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.header-icon {
+  font-size: 3.5rem;
+  color: var(--primary-color);
+  background: var(--primary-50);
+  padding: 1.5rem;
+  border-radius: 50%;
+}
+
+.workspace-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2rem;
+  max-width: 1000px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+::ng-deep .workspace-card .p-card-body {
+  padding: 0;
+}
+
+::ng-deep .workspace-card {
+  width: 280px;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid #e2e8f0;
+  background-color: #ffffff;
+  color: #1e293b;
+  border-radius: 1rem;
+  overflow: hidden;
+  text-align: center;
+}
+
+::ng-deep .workspace-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+  border-color: var(--primary-color);
+}

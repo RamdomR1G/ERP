@@ -1,11 +1,16 @@
 import { Component } from '@angular/core';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
+import { AuthService, UserGroup } from '../../../services/auth.service';
+import { CommonModule } from '@angular/common';
+import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [TableModule, TagModule],
+  imports: [TableModule, TagModule, CommonModule, ButtonModule, CardModule],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css'
 })
@@ -36,12 +41,22 @@ export class DashboardComponent {
   ];
 
   getSeverity(status: string): 'success' | 'warn' | 'info' | 'danger' | 'secondary' {
-  const map: Record<string, 'success' | 'warn' | 'info' | 'danger' | 'secondary'> = {
-    Delivered: 'success',
-    Pending: 'warn',
-    Shipped: 'info',
-    Cancelled: 'danger'
-  };
-  return map[status] ?? 'secondary';
-}
+    const map: Record<string, 'success' | 'warn' | 'info' | 'danger' | 'secondary'> = {
+      Delivered: 'success',
+      Pending: 'warn',
+      Shipped: 'info',
+      Cancelled: 'danger'
+    };
+    return map[status] ?? 'secondary';
+  }
+
+  // ── SELECTION LOGIC ────────────────────────
+  constructor(public authService: AuthService, private router: Router) {}
+
+  selectGroup(group: UserGroup) {
+    this.authService.setActiveGroup(group);
+    if (group) {
+      this.router.navigate(['/home/groups', group.id, 'dashboard']);
+    }
+  }
 }

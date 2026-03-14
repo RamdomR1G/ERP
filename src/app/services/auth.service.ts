@@ -1,34 +1,62 @@
 import { Injectable } from '@angular/core';
 
+export interface UserGroup {
+  id: string;
+  name: string;
+  icon: string;
+  members?: number;
+  description?: string;
+  color?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  // En un entorno real, estos vendrían cargados de la base de datos tras el login.
-  // Por ahora, simulamos los permisos base del `Common User` a modo de default seguro.
-  // Puedes usar ?permissions=admin o lo que desees probar luego cambiando esto
+  // ── PERMISOS DEL USUARIO ──────────────────────────────────────────────
   private currentUserPermissions: string[] = [
-    'group:view', 
-    'ticket:view', 
-    'ticket:edit_state', 
-    'user:view', 
-    'user:edit',
-    'users:view',
-    'ticket:add',
-    'group:add'
+    'group:view', 'ticket:view', 'ticket:edit_state', 'user:view', 'user:edit'
   ];
+
+  // ── ESTADO DEL GRUPO DE TRABAJO ───────────────────────────────────────
+  private availableGroups: UserGroup[] = [
+    { id: 'management', name: 'Management', icon: 'pi pi-briefcase', members: 2, description: 'Executive and administrative staff', color: '#6366f1' },
+    { id: 'sales', name: 'Sales', icon: 'pi pi-chart-line', members: 2, description: 'Sales reps and account managers', color: '#22c55e' },
+    { id: 'support', name: 'Support', icon: 'pi pi-headphones', members: 2, description: 'Customer support and helpdesk team', color: '#0ea5e9' }
+  ];
+  private activeGroup: UserGroup | null = null;
+
   constructor() {}
+
   /**
-   * Actualiza el set de permisos actuales.
+   * 1. PERMISOS
    */
   setPermissions(permissionsArray: string[]) {
     this.currentUserPermissions = permissionsArray;
+    // Al cambiar de usuario/permisos, por seguridad cerramos el grupo activo
+    this.activeGroup = null; 
   }
-  /**
-   * Verifica estrictamente si el usuario posee un string de permiso específico
-   * @param permissionName el nombre de la acción.
-   */
+
   hasPermission(permissionName: string): boolean {
     return this.currentUserPermissions.includes(permissionName);
+  }
+
+  /**
+   * 2. GRUPOS DE TRABAJO
+   */
+  setGroups(groups: UserGroup[]) {
+    this.availableGroups = groups;
+  }
+
+  getAvailableGroups(): UserGroup[] {
+    return this.availableGroups;
+  }
+
+  setActiveGroup(group: UserGroup | null) {
+    this.activeGroup = group;
+  }
+
+  getActiveGroup(): UserGroup | null {
+    return this.activeGroup;
   }
 }

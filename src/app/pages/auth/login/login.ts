@@ -51,7 +51,15 @@ export class LoginComponent {
       ]);
     }
 
-    this.router.navigate(['/home']);
+    // ── SIMULADOR DE "GRUPOS DISPONIBLES" ──
+    // Simularemos que todos los usuarios pertenecen a 3 centros de trabajo / grupos
+    this.authService.setGroups([
+      { id: 'g01', name: 'Equipo Dev', icon: 'pi pi-code' },
+      { id: 'g02', name: 'Soporte', icon: 'pi pi-headphones' },
+      { id: 'g03', name: 'UX & Design', icon: 'pi pi-palette' }
+    ]);
+
+    this.router.navigate(['/home/dashboard']);
   }
 
   goToRegister() {

@@ -42,7 +42,24 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/home/tickets/tickets').then(m => m.TicketsComponent),
         canActivate: [authGuard],
         data: { requiredPermission: 'ticket:view' }
+      },
+      {
+        path: 'profile',
+        loadComponent: () => import('./pages/home/profile/profile').then(m => m.ProfileComponent)
+      },
+      {
+        path: 'groups/:id/dashboard',
+        loadComponent: () => import('./pages/home/groups/dashboard/dashboard').then(m => m.GroupDashboardComponent),
+        canActivate: [authGuard],
+        data: { requiredPermission: 'group:view' }
+      },
+      {
+        path: 'groups/:id/settings',
+        loadComponent: () => import('./pages/home/groups/settings/settings').then(m => m.GroupSettingsComponent),
+        canActivate: [authGuard],
+        data: { requiredPermission: 'group:edit' }
       }
     ]
-  }
+  },
+  { path: '**', redirectTo: '' }
 ];

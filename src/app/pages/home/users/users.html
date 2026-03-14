@@ -1,29 +1,33 @@
 <div class="users">
-  <!-- MODAL NEW USER -->
-<p-dialog header="New User" [(visible)]="visible" [style]="{ width: '30rem' }" [modal]="true">
+  <p-toast></p-toast>
+  <p-confirmDialog></p-confirmDialog>
+
+  <!-- MODAL NEW / EDIT USER -->
+<p-dialog [header]="editingUserId ? 'Edit User' : 'New User'" [(visible)]="visible" [style]="{ width: '35rem' }" [modal]="true">
   <div class="field">
     <label for="userName">User Name</label>
     <input pInputText id="userName" [(ngModel)]="newUserName"
-           placeholder="" class="w-full" />
+           placeholder="Full Name" class="w-full" />
   </div>
   <div class="field">
     <label for="userEmail">User Email</label>
     <input pInputText id="userEmail" [(ngModel)]="newUserEmail"
-           placeholder="@.com" class="w-full" />
+           placeholder="email@domain.com" class="w-full" />
   </div>
   <div class="field">
     <label for="userRole">User Role</label>
     <p-select inputId="userRole" [options]="roles" [(ngModel)]="newUserRole"
-           optionLabel="name" optionValue="name" placeholder="Select Role" appendTo="body"></p-select>
+           optionLabel="name" optionValue="name" placeholder="Select Role" appendTo="body" class="w-full" styleClass="w-full"></p-select>
   </div>
   <div class="field">
     <label for="userGroup">User Group</label>
     <p-select inputId="userGroup" [options]="groups" [(ngModel)]="newUserGroup"
-           optionLabel="name" optionValue="name" placeholder="Select Group" appendTo="body"></p-select>
+           optionLabel="name" optionValue="name" placeholder="Select Group" appendTo="body" class="w-full" styleClass="w-full"></p-select>
   </div>
   <div class="field">
     <label for="userStatus">User Status</label>
-    <p-checkbox [(ngModel)]="newUserStatus" [binary]="true"/>
+    <p-select inputId="userStatus" [options]="[{label:'Active', value:'Active'}, {label:'Inactive', value:'Inactive'}]" [(ngModel)]="newUserStatus"
+           optionLabel="label" optionValue="value" appendTo="body" class="w-full" styleClass="w-full"></p-select>
   </div>
   <div class="field">
     <label for="userJoined">User Joined</label>
@@ -31,8 +35,8 @@
            placeholder="--/--/----" class="w-full" />
   </div>
   <ng-template pTemplate="footer">
-    <p-button label="Cancel" severity="secondary" (onClick)="visible = false" />
-    <p-button label="Save User" icon="pi pi-check" (onClick)="saveUser()" />
+    <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="visible = false" />
+    <p-button [label]="editingUserId ? 'Save Changes' : 'Create'" icon="pi pi-check" (onClick)="saveUser()" [disabled]="!newUserName || !newUserEmail || !newUserRole" />
   </ng-template>
 </p-dialog>
   <h2 class="page-title">Users Management</h2>
@@ -81,9 +85,9 @@
           <td><p-tag [value]="user.status" [severity]="getUserSeverity(user.status)" /></td>
           <td>{{ user.joined }}</td>
           <td>
-            <p-button icon="pi pi-eye" [text]="true" severity="info" size="small" />
-            <p-button *appHasPermission="'user:edit'" icon="pi pi-pencil" [text]="true" severity="info" size="small" />
-            <p-button *appHasPermission="'user:delete'" icon="pi pi-trash" [text]="true" severity="danger" size="small" />
+            <!-- Here we respect the structural directives for users:edit and users:delete -->
+            <p-button *appHasPermission="'user:edit'" icon="pi pi-pencil" [text]="true" severity="info" size="small" (onClick)="editUser(user)" pTooltip="Edit User" />
+            <p-button *appHasPermission="'user:delete'" icon="pi pi-trash" [text]="true" severity="danger" size="small" (onClick)="deleteUser(user)" [disabled]="user.name === 'Super Admin'" pTooltip="Delete User" />
           </td>
         </tr>
       </ng-template>

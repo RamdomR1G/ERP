@@ -43,10 +43,10 @@
       <p-button *appHasPermission="'group:add'" label="New Group" icon="pi pi-plus" severity="secondary" (onClick)="newGroup()" />
     </div>
     <div class="groups-grid">
-      @for (group of groups; track group.name) {
+      @for (group of groups; track group.id) {
         <div class="group-card">
           <div class="group-icon" [style.background]="group.color + '18'" [style.color]="group.color">
-            <i class="pi pi-sitemap"></i>
+            <i [class]="group.icon || 'pi pi-sitemap'"></i>
           </div>
           <div class="group-info">
             <h4 class="group-name">{{ group.name }}</h4>
@@ -55,9 +55,12 @@
               <i class="pi pi-users"></i> {{ group.members }} members
             </span>
           </div>
-          <div class="group-actions">
-            <p-button *appHasPermission="'group:edit'" icon="pi pi-pencil" [text]="true" severity="info" size="small" />
-            <p-button *appHasPermission="'group:delete'" icon="pi pi-trash" [text]="true" severity="danger" size="small" />
+          <div class="group-actions" style="display: flex; gap: 0.5rem; justify-content: flex-end; width: 100%;">
+            <p-button label="View Dashboard" [outlined]="true" size="small" (onClick)="goToDashboard(group.id)" styleClass="mr-auto"></p-button>
+            <div>
+              <p-button *appHasPermission="'group:edit'" icon="pi pi-pencil" [text]="true" severity="info" size="small" />
+              <p-button *appHasPermission="'group:delete'" icon="pi pi-trash" [text]="true" severity="danger" size="small" />
+            </div>
           </div>
         </div>
       }

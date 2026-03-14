@@ -41,7 +41,8 @@ export class Header {
         items: [
           {
             label: 'Perfil',
-            icon: 'pi pi-user'
+            icon: 'pi pi-user',
+            command: () => { this.navigate('/home/profile'); }
           },
           {
             label: 'Settings',
@@ -49,7 +50,8 @@ export class Header {
           },
           {
             label: 'Logout',
-            icon: 'pi pi-sign-out'
+            icon: 'pi pi-sign-out',
+            command: () => { this.navigate('/auth/login'); }
           }
         ]
       }
