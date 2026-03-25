@@ -35,13 +35,24 @@ export class LoginComponent {
     
     if (this.email === adminEmail) {
       console.log('Login: Admin User. Receiving full access token.');
+      this.authService.setCurrentUser({ email: this.email, name: 'Admin' });
       this.authService.setPermissions([
         'group:view', 'group:add', 'group:edit', 'group:delete',
         'users:view', 'user:add', 'user:edit', 'user:delete',
-        'ticket:view', 'ticket:add', 'ticket:edit', 'ticket:delete'
+        'ticket:view', 'ticket:add', 'ticket:edit', 'ticket:delete', 'ticket:edit_state'
       ]);
     } else {
       console.log(`Login: Common User (${this.email}). Receiving limited token.`);
+      let userName = this.email.split('@')[0];
+      const strippedName = userName.toLowerCase().replace(/[^a-z]/g, '');
+      if (strippedName === 'johndoe') {
+        userName = 'John Doe';
+      } else if (strippedName === 'janesmith') {
+        userName = 'Jane Smith';
+      } else {
+        userName = userName.charAt(0).toUpperCase() + userName.slice(1);
+      }
+      this.authService.setCurrentUser({ email: this.email, name: userName });
       this.authService.setPermissions([
         'group:view', 
         'ticket:view', 

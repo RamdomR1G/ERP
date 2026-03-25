@@ -1,0 +1,356 @@
+<div class="dashboard-container">
+  
+  <!-- HEADER -->
+  <div class="header-actions">
+    <div class="title-section">
+      <p-button icon="pi pi-arrow-left" [outlined]="true" severity="secondary" (onClick)="goBack()"></p-button>
+      <h2>{{ groupName }} Dashboard</h2>
+    </div>
+    <div style="display: flex; gap: 1rem;">
+      <p-selectButton [options]="viewOptions" [(ngModel)]="viewMode" optionValue="value" optionLabel="value">
+        <ng-template pTemplate="item" let-item>
+          <i [class]="item.icon"></i>
+        </ng-template>
+      </p-selectButton>
+      <p-button *appHasPermission="'group:edit'" icon="pi pi-cog" [outlined]="true" severity="secondary" (onClick)="goToSettings()" pTooltip="Manage Group Settings"></p-button>
+      <p-button *appHasPermission="'ticket:add'" label="Create Ticket" icon="pi pi-plus" (onClick)="newTicket()"></p-button>
+    </div>
+  </div>
+
+  <!-- STATS SUMMARY -->
+  <div class="stats-grid">
+    <p-card styleClass="stat-card">
+      <div class="stat-content">
+        <div class="stat-icon" style="background: #eef2ff; color: #6366f1;">
+          <i class="pi pi-ticket"></i>
+        </div>
+        <div>
+          <h3>Total Tickets</h3>
+          <p class="stat-value">{{ tickets.length }}</p>
+        </div>
+      </div>
+    </p-card>
+    <p-card styleClass="stat-card">
+      <div class="stat-content">
+        <div class="stat-icon" style="background: #fdf2f8; color: #ec4899;">
+          <i class="pi pi-clock"></i>
+        </div>
+        <div>
+          <h3>Pending</h3>
+          <p class="stat-value">{{ pendingTickets.length }}</p>
+        </div>
+      </div>
+    </p-card>
+    <p-card styleClass="stat-card">
+      <div class="stat-content">
+        <div class="stat-icon" style="background: #fffbeb; color: #f59e0b;">
+          <i class="pi pi-spinner"></i>
+        </div>
+        <div>
+          <h3>In Progress</h3>
+          <p class="stat-value">{{ inProgressTickets.length }}</p>
+        </div>
+      </div>
+    </p-card>
+    <p-card styleClass="stat-card">
+      <div class="stat-content">
+        <div class="stat-icon" style="background: #fdf2f8; color: #ec4899;">
+          <i class="pi pi-eye"></i>
+        </div>
+        <div>
+          <h3>Review</h3>
+          <p class="stat-value">{{ reviewTickets.length }}</p>
+        </div>
+      </div>
+    </p-card>
+    <p-card styleClass="stat-card">
+      <div class="stat-content">
+        <div class="stat-icon" style="background: #f0fdf4; color: #22c55e;">
+          <i class="pi pi-check-circle"></i>
+        </div>
+        <div>
+          <h3>Done</h3>
+          <p class="stat-value">{{ doneTickets.length }}</p>
+        </div>
+      </div>
+    </p-card>
+  </div>
+
+  <!-- QUICK FILTERS -->
+  <div class="quick-filters-row" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+    @for (filter of filters; track filter) {
+      <p-button 
+        [label]="filter" 
+        [outlined]="activeFilter !== filter" 
+        [severity]="activeFilter === filter ? 'primary' : 'secondary'"
+        size="small"
+        styleClass="rounded-pill"
+        (onClick)="activeFilter = filter">
+      </p-button>
+    }
+  </div>
+
+  <!-- VIEWS (KANBAN or LIST) -->
+  @if (viewMode === 'kanban') {
+    <!-- KANBAN BOARD -->
+    <div class="kanban-board" cdkDropListGroup>
+      <!-- PENDING COLUMN -->
+      <div class="kanban-column">
+        <div class="column-header">
+          <h4>Pending</h4>
+          <p-tag [value]="pendingTickets.length.toString()" severity="info"></p-tag>
+        </div>
+        <div class="column-content" cdkDropList [cdkDropListData]="pendingTickets" (cdkDropListDropped)="drop($event, 'Pending')">
+          @for (ticket of pendingTickets; track ticket.id) {
+            <p-card styleClass="kanban-card" [class.disabled-card]="!hasTicketEditAccess(ticket)" cdkDrag [cdkDragData]="ticket" [cdkDragDisabled]="!hasTicketEditAccess(ticket)" (click)="editTicket(ticket)">
+              <div class="card-top">
+                <span class="ticket-id">#{{ticket.id}}</span>
+                <p-tag [value]="ticket.priority" [severity]="getTicketSeverity(ticket.priority)"></p-tag>
+              </div>
+              <h4 class="ticket-title">{{ticket.title}}</h4>
+              <div class="card-bottom">
+                <span class="assignee"><i class="pi pi-user"></i> {{ticket.assignedTo}}</span>
+                <span class="date" style="font-size: 0.75rem;"><i class="pi pi-calendar"></i> {{ticket.deadline || ticket.createdOn}}</span>
+              </div>
+            </p-card>
+          } @empty {
+            <div class="empty-state">No tickets</div>
+          }
+        </div>
+      </div>
+
+      <!-- IN PROGRESS COLUMN -->
+      <div class="kanban-column">
+        <div class="column-header">
+          <h4>In Progress</h4>
+          <p-tag [value]="inProgressTickets.length.toString()" severity="warn"></p-tag>
+        </div>
+        <div class="column-content" cdkDropList [cdkDropListData]="inProgressTickets" (cdkDropListDropped)="drop($event, 'In Progress')">
+          @for (ticket of inProgressTickets; track ticket.id) {
+            <p-card styleClass="kanban-card" [class.disabled-card]="!hasTicketEditAccess(ticket)" cdkDrag [cdkDragData]="ticket" [cdkDragDisabled]="!hasTicketEditAccess(ticket)" (click)="editTicket(ticket)">
+              <div class="card-top">
+                <span class="ticket-id">#{{ticket.id}}</span>
+                <p-tag [value]="ticket.priority" [severity]="getTicketSeverity(ticket.priority)"></p-tag>
+              </div>
+              <h4 class="ticket-title">{{ticket.title}}</h4>
+              <div class="card-bottom">
+                <span class="assignee"><i class="pi pi-user"></i> {{ticket.assignedTo}}</span>
+                <span class="date" style="font-size: 0.75rem;"><i class="pi pi-calendar"></i> {{ticket.deadline || ticket.createdOn}}</span>
+              </div>
+            </p-card>
+          } @empty {
+            <div class="empty-state">No tickets</div>
+          }
+        </div>
+      </div>
+
+      <!-- REVIEW COLUMN -->
+      <div class="kanban-column">
+        <div class="column-header">
+          <h4>Review</h4>
+          <p-tag [value]="reviewTickets.length.toString()" severity="contrast"></p-tag>
+        </div>
+        <div class="column-content" cdkDropList [cdkDropListData]="reviewTickets" (cdkDropListDropped)="drop($event, 'Review')">
+          @for (ticket of reviewTickets; track ticket.id) {
+            <p-card styleClass="kanban-card" [class.disabled-card]="!hasTicketEditAccess(ticket)" cdkDrag [cdkDragData]="ticket" [cdkDragDisabled]="!hasTicketEditAccess(ticket)" (click)="editTicket(ticket)">
+              <div class="card-top">
+                <span class="ticket-id">#{{ticket.id}}</span>
+                <p-tag [value]="ticket.priority" [severity]="getTicketSeverity(ticket.priority)"></p-tag>
+              </div>
+              <h4 class="ticket-title">{{ticket.title}}</h4>
+              <div class="card-bottom">
+                <span class="assignee"><i class="pi pi-user"></i> {{ticket.assignedTo}}</span>
+                <span class="date" style="font-size: 0.75rem;"><i class="pi pi-calendar"></i> {{ticket.deadline || ticket.createdOn}}</span>
+              </div>
+            </p-card>
+          } @empty {
+            <div class="empty-state">No tickets</div>
+          }
+        </div>
+      </div>
+
+      <!-- DONE COLUMN -->
+      <div class="kanban-column">
+        <div class="column-header">
+          <h4>Done</h4>
+          <p-tag [value]="doneTickets.length.toString()" severity="success"></p-tag>
+        </div>
+        <div class="column-content" cdkDropList [cdkDropListData]="doneTickets" (cdkDropListDropped)="drop($event, 'Done')">
+          @for (ticket of doneTickets; track ticket.id) {
+            <p-card styleClass="kanban-card" [class.disabled-card]="!hasTicketEditAccess(ticket)" cdkDrag [cdkDragData]="ticket" [cdkDragDisabled]="!hasTicketEditAccess(ticket)" (click)="editTicket(ticket)">
+              <div class="card-top">
+                <span class="ticket-id">#{{ticket.id}}</span>
+                <p-tag [value]="ticket.priority" [severity]="getTicketSeverity(ticket.priority)"></p-tag>
+              </div>
+              <h4 class="ticket-title">{{ticket.title}}</h4>
+              <div class="card-bottom">
+                <span class="assignee"><i class="pi pi-user"></i> {{ticket.assignedTo}}</span>
+                <span class="date" style="font-size: 0.75rem;"><i class="pi pi-calendar"></i> {{ticket.deadline || ticket.createdOn}}</span>
+              </div>
+            </p-card>
+          } @empty {
+            <div class="empty-state">No tickets</div>
+          }
+        </div>
+      </div>
+    </div>
+  } @else {
+    <!-- LIST VIEW BOARD -->
+    <div class="list-board">
+      <p-table #dt [value]="filteredTicketsList" [paginator]="true" [rows]="10" dataKey="id"
+               [globalFilterFields]="['title', 'status', 'assignedTo', 'priority']"
+               [tableStyle]="{'min-width': '60rem'}" class="w-full">
+               
+        <ng-template pTemplate="caption">
+          <div style="display: flex; justify-content: flex-end;">
+            <p-iconfield iconPosition="left" class="ml-auto">
+              <p-inputicon>
+                  <i class="pi pi-search"></i>
+              </p-inputicon>
+              <input pInputText type="text" (input)="dt.filterGlobal($any($event.target).value, 'contains')" placeholder="Search tickets..." />
+            </p-iconfield>
+          </div>
+        </ng-template>
+
+        <ng-template pTemplate="header">
+          <tr>
+            <th pSortableColumn="id">ID <p-sortIcon field="id"></p-sortIcon></th>
+            <th pSortableColumn="title">Title <p-sortIcon field="title"></p-sortIcon></th>
+            <th pSortableColumn="status">Status <p-sortIcon field="status"></p-sortIcon></th>
+            <th pSortableColumn="priority">Priority <p-sortIcon field="priority"></p-sortIcon></th>
+            <th pSortableColumn="assignedTo">Assignee <p-sortIcon field="assignedTo"></p-sortIcon></th>
+            <th pSortableColumn="deadline">Deadline <p-sortIcon field="deadline"></p-sortIcon></th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-ticket>
+          <tr (click)="editTicket(ticket)" class="cursor-pointer row-hover">
+            <td><strong>#{{ticket.id}}</strong></td>
+            <td>{{ticket.title}}</td>
+            <td><p-tag [value]="ticket.status" severity="secondary"></p-tag></td>
+            <td><p-tag [value]="ticket.priority" [severity]="getTicketSeverity(ticket.priority)"></p-tag></td>
+            <td>{{ticket.assignedTo}}</td>
+            <td>{{ticket.deadline || ticket.createdOn}}</td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="6" style="text-align: center; padding: 2rem;">No tickets found.</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  }
+
+  <!-- RECENT TICKETS -->
+  <div class="recent-section">
+    <h3>Recent Activity</h3>
+    <div class="recent-list">
+      @for (ticket of recentTickets; track ticket.id) {
+        <div class="recent-item">
+          <div class="recent-info">
+            <span class="ticket-id">#{{ticket.id}}</span>
+            <span class="ticket-title">{{ticket.title}}</span>
+          </div>
+          <div class="recent-meta">
+            <p-tag [value]="ticket.status" severity="secondary"></p-tag>
+            <span class="date">{{ticket.createdOn}}</span>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- NEW / EDIT TICKET MODAL -->
+  <p-dialog [header]="editingTicketId ? 'Ticket #' + editingTicketId : 'New Ticket'" [(visible)]="visible" [style]="{ width: '55rem' }" [modal]="true" styleClass="ticket-detail-modal">
+    <div class="ticket-detail-grid">
+      
+      <!-- MAIN / LEFT COLUMN -->
+      <div class="detail-main">
+        <div class="field">
+          <label for="title">Title</label>
+          <input pInputText id="title" [(ngModel)]="newTicketTitle" class="w-full" [disabled]="!canEditFull()" />
+        </div>
+        <div class="field">
+          <label for="desc">Description</label>
+          <textarea id="desc" [(ngModel)]="newTicketDescription" rows="4" class="w-full custom-textarea" [disabled]="!canEditFull()"></textarea>
+        </div>
+
+        @if (editingTicketRef) {
+          <div class="comments-section mt-4">
+            <h4>Comments & Activity</h4>
+            <div class="comments-list">
+              @for (comment of editingTicketRef.comments; track comment.date + $index) {
+                <div class="comment-item">
+                  <div class="comment-header">
+                    <strong>{{comment.author}}</strong>
+                    <span class="comment-date">{{comment.date}}</span>
+                  </div>
+                  <div class="comment-text">{{comment.text}}</div>
+                </div>
+              } @empty {
+                <div class="empty-state-small">No comments yet.</div>
+              }
+            </div>
+            <div class="add-comment mt-3" style="display: flex; gap: 0.5rem;">
+              <input pInputText placeholder="Add a comment..." [(ngModel)]="newCommentText" class="w-full" (keyup.enter)="addComment()" />
+              <p-button icon="pi pi-send" (onClick)="addComment()" [disabled]="!newCommentText.trim()"></p-button>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- SIDEBAR / RIGHT COLUMN -->
+      <div class="detail-sidebar">
+        <div class="field">
+          <label for="status">Status</label>
+          <p-select [options]="statuses" [(ngModel)]="newTicketStatus" optionLabel="name" optionValue="name" placeholder="Select Status" class="w-full" [disabled]="!canEditFull() && !canEditPartial()"></p-select>
+        </div>
+        <div class="field">
+          <label for="assign">Assignee</label>
+          <input pInputText id="assign" [(ngModel)]="newTicketAssignedTo" class="w-full" [disabled]="!canEditFull()" />
+        </div>
+        <div class="field">
+          <label for="priority">Priority</label>
+          <p-select [options]="priorities" [(ngModel)]="newTicketPriority" optionLabel="name" optionValue="name" placeholder="Select Priority" class="w-full" [disabled]="!canEditFull()"></p-select>
+        </div>
+        
+        @if (editingTicketRef) {
+          <div class="field-readonly mt-2">
+            <span class="label">Created By:</span>
+            <span class="value">{{editingTicketRef.createdBy}}</span>
+          </div>
+          <div class="field-readonly">
+            <span class="label">Created On:</span>
+            <span class="value">{{editingTicketRef.createdOn}}</span>
+          </div>
+          <div class="field-readonly">
+            <span class="label">Deadline:</span>
+            <span class="value">{{editingTicketRef.deadline || 'No deadline'}}</span>
+          </div>
+          
+          <div class="history-section mt-4">
+            <h4>History</h4>
+            <div class="history-list">
+              @for (hist of editingTicketRef.history; track hist.date + $index) {
+                <div class="history-item">
+                  <span class="history-date">{{hist.date}}</span>
+                  <span class="history-action">{{hist.action}}</span>
+                </div>
+              } @empty {
+                <div class="empty-state-small">No history available.</div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+    </div>
+
+    <ng-template pTemplate="footer">
+      <p-button label="Close" severity="secondary" [outlined]="true" (onClick)="visible = false" />
+      <p-button [label]="editingTicketId ? 'Save Changes' : 'Create'" icon="pi pi-check" (onClick)="saveTicket()" [disabled]="!newTicketTitle || !newTicketTitle.trim()" />
+    </ng-template>
+  </p-dialog>
+</div>

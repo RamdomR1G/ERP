@@ -1,0 +1,86 @@
+<div class="settings-container">
+  
+  <div class="header-actions">
+    <div class="title-section">
+      <p-button icon="pi pi-arrow-left" [outlined]="true" severity="secondary" (onClick)="goBack()"></p-button>
+      <h2>Group Settings</h2>
+    </div>
+  </div>
+
+  <div class="settings-grid">
+    
+    <!-- GENERAL SETTINGS -->
+    <div class="settings-main">
+      <p-card styleClass="settings-card mb-4">
+        <h3>General Information</h3>
+        <p class="text-secondary mb-4">Update your group's basic profile details.</p>
+        
+        <div class="field">
+          <label for="groupName">Group Name</label>
+          <input pInputText id="groupName" [(ngModel)]="groupName" class="w-full max-w-md" [disabled]="!canEdit" />
+        </div>
+        
+        <div class="flex-end mt-4">
+          <p-button label="Save Changes" icon="pi pi-save" (onClick)="saveSettings()" [disabled]="!canEdit"></p-button>
+        </div>
+      </p-card>
+
+      <!-- MEMBERSHIP -->
+      <p-card styleClass="settings-card">
+        <h3>Members</h3>
+        <p class="text-secondary mb-4">Manage who has access to this group's dashboard.</p>
+
+        <!-- Add Member -->
+        <div class="invite-section" *ngIf="canEdit">
+          <div class="p-inputgroup max-w-md">
+            <input type="text" pInputText placeholder="Email address" [(ngModel)]="newMemberEmail" (keyup.enter)="addMember()" />
+            <p-button label="Invite" icon="pi pi-user-plus" (onClick)="addMember()" [disabled]="!newMemberEmail.trim()"></p-button>
+          </div>
+        </div>
+
+        <!-- Members Table -->
+        <div class="members-table-container mt-4">
+          <p-table [value]="members" styleClass="p-datatable-sm">
+            <ng-template pTemplate="header">
+              <tr>
+                <th>User</th>
+                <th>Role</th>
+                <th *ngIf="canEdit" style="width: 80px; text-align: center;">Actions</th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-member>
+              <tr>
+                <td>
+                  <div class="member-info">
+                    <strong>{{member.name}}</strong>
+                    <span class="member-email">{{member.email}}</span>
+                  </div>
+                </td>
+                <td>
+                  <p-tag [value]="member.role" [severity]="member.role === 'Owner' ? 'info' : 'secondary'"></p-tag>
+                </td>
+                <td *ngIf="canEdit" style="text-align: center;">
+                  <p-button icon="pi pi-trash" [outlined]="true" severity="danger" size="small" [disabled]="member.role === 'Owner'" (onClick)="removeMember(member.id)"></p-button>
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </div>
+      </p-card>
+    </div>
+
+    <!-- DANGER ZONE SIDEBAR -->
+    <div class="settings-sidebar" *ngIf="canEdit">
+      <p-card styleClass="danger-card">
+        <h3 class="danger-title"><i class="pi pi-exclamation-circle"></i> Danger Zone</h3>
+        <p class="danger-text">Deleting a group is irreversible. It will destroy all tickets, comments, and member associations permanently.</p>
+        <div class="mt-4">
+          <p-button label="Delete Group" severity="danger" icon="pi pi-trash" class="w-full" (onClick)="confirmDelete()"></p-button>
+        </div>
+      </p-card>
+    </div>
+
+  </div>
+</div>
+
+<p-confirmDialog [style]="{width: '450px'}"></p-confirmDialog>

@@ -13,10 +13,11 @@ export interface UserGroup {
   providedIn: 'root'
 })
 export class AuthService {
+  // ── IDENTIDAD DEL USUARIO ─────────────────────────────────────────────
+  private currentUserData: { email: string; name: string } | null = null;
+  
   // ── PERMISOS DEL USUARIO ──────────────────────────────────────────────
-  private currentUserPermissions: string[] = [
-    'group:view', 'ticket:view', 'ticket:edit_state', 'user:view', 'user:edit'
-  ];
+  private currentUserPermissions: string[] = [];
 
   // ── ESTADO DEL GRUPO DE TRABAJO ───────────────────────────────────────
   private availableGroups: UserGroup[] = [
@@ -26,7 +27,30 @@ export class AuthService {
   ];
   private activeGroup: UserGroup | null = null;
 
-  constructor() {}
+  constructor() {
+    this.loadSession();
+  }
+
+  private loadSession() {
+    const savedUser = sessionStorage.getItem('mockUser');
+    const savedPerms = sessionStorage.getItem('mockPerms');
+
+    if (savedUser) {
+      this.currentUserData = JSON.parse(savedUser);
+    } else {
+      this.currentUserData = { email: 'admin@admin.com', name: 'Admin' };
+    }
+
+    if (savedPerms) {
+      this.currentUserPermissions = JSON.parse(savedPerms);
+    } else {
+      this.currentUserPermissions = [
+        'group:view', 'group:add', 'group:edit', 'group:delete',
+        'users:view', 'user:add', 'user:edit', 'user:delete',
+        'ticket:view', 'ticket:add', 'ticket:edit', 'ticket:delete', 'ticket:edit_state'
+      ];
+    }
+  }
 
   /**
    * 1. PERMISOS
@@ -35,10 +59,20 @@ export class AuthService {
     this.currentUserPermissions = permissionsArray;
     // Al cambiar de usuario/permisos, por seguridad cerramos el grupo activo
     this.activeGroup = null; 
+    sessionStorage.setItem('mockPerms', JSON.stringify(permissionsArray));
   }
 
   hasPermission(permissionName: string): boolean {
     return this.currentUserPermissions.includes(permissionName);
+  }
+
+  setCurrentUser(user: { email: string; name: string }) {
+    this.currentUserData = user;
+    sessionStorage.setItem('mockUser', JSON.stringify(user));
+  }
+
+  getCurrentUser() {
+    return this.currentUserData;
   }
 
   /**

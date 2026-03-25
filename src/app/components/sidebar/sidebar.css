@@ -5,6 +5,7 @@
   transition: width 0.3s ease;
   overflow: hidden;
   padding-top: 1rem;
+  height: 100%;
 }
 
 .sidebar.collapsed { 
