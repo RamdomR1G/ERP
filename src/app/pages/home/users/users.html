@@ -3,36 +3,64 @@
   <p-confirmDialog></p-confirmDialog>
 
   <!-- MODAL NEW / EDIT USER -->
-<p-dialog [header]="editingUserId ? 'Edit User' : 'New User'" [(visible)]="visible" [style]="{ width: '35rem' }" [modal]="true">
-  <div class="field">
-    <label for="userName">User Name</label>
-    <input pInputText id="userName" [(ngModel)]="newUserName"
-           placeholder="Full Name" class="w-full" />
-  </div>
-  <div class="field">
-    <label for="userEmail">User Email</label>
-    <input pInputText id="userEmail" [(ngModel)]="newUserEmail"
-           placeholder="email@domain.com" class="w-full" />
-  </div>
-  <div class="field">
-    <label for="userRole">User Role</label>
-    <p-select inputId="userRole" [options]="roles" [(ngModel)]="newUserRole"
-           optionLabel="name" optionValue="name" placeholder="Select Role" appendTo="body" class="w-full" styleClass="w-full"></p-select>
-  </div>
-  <div class="field">
-    <label for="userGroup">User Group</label>
-    <p-select inputId="userGroup" [options]="groups" [(ngModel)]="newUserGroup"
-           optionLabel="name" optionValue="name" placeholder="Select Group" appendTo="body" class="w-full" styleClass="w-full"></p-select>
-  </div>
-  <div class="field">
-    <label for="userStatus">User Status</label>
-    <p-select inputId="userStatus" [options]="[{label:'Active', value:'Active'}, {label:'Inactive', value:'Inactive'}]" [(ngModel)]="newUserStatus"
-           optionLabel="label" optionValue="value" appendTo="body" class="w-full" styleClass="w-full"></p-select>
-  </div>
-  <div class="field">
-    <label for="userJoined">User Joined</label>
-    <input pInputText id="userJoined" [(ngModel)]="newUserJoined"
-           placeholder="--/--/----" class="w-full" />
+<p-dialog [header]="editingUserId ? 'Edit User' : 'New User'" [(visible)]="visible" [style]="{ width: '50rem' }" [modal]="true">
+  <div class="user-form-grid">
+    <div class="form-column">
+      <h3 class="section-title">Basic Information</h3>
+      <div class="field">
+        <label for="userName">User Name</label>
+        <input pInputText id="userName" [(ngModel)]="newUserName"
+               placeholder="Full Name" class="w-full" />
+      </div>
+      <div class="field">
+        <label for="userEmail">User Email</label>
+        <input pInputText id="userEmail" [(ngModel)]="newUserEmail"
+               placeholder="email@domain.com" class="w-full" />
+      </div>
+      <div class="field">
+        <label for="userPassword">Password</label>
+        <p-password id="userPassword" [(ngModel)]="newUserPassword"
+               placeholder="leave blank if unchanged" 
+               [toggleMask]="true" 
+               [feedback]="false"
+               styleClass="w-full" 
+               inputStyleClass="w-full"></p-password>
+      </div>
+      <div class="field">
+        <label for="userRole">User Role (Display Only)</label>
+        <p-select inputId="userRole" [options]="roles" [(ngModel)]="newUserRole"
+               optionLabel="name" optionValue="name" placeholder="Select Role" appendTo="body" class="w-full" styleClass="w-full"></p-select>
+      </div>
+      <div class="field">
+        <label for="userGroup">User Group</label>
+        <p-select inputId="userGroup" [options]="groups" [(ngModel)]="newUserGroup"
+               optionLabel="name" optionValue="name" placeholder="Select Group" appendTo="body" class="w-full" styleClass="w-full"></p-select>
+      </div>
+      <div class="field">
+        <label for="userStatus">User Status</label>
+        <p-select inputId="userStatus" [options]="[{label:'Active', value:'Active'}, {label:'Inactive', value:'Inactive'}]" [(ngModel)]="newUserStatus"
+               optionLabel="label" optionValue="value" appendTo="body" class="w-full" styleClass="w-full"></p-select>
+      </div>
+    </div>
+
+    <div class="form-column permissions-section">
+      <h3 class="section-title">Active Permissions</h3>
+      <div class="permissions-container">
+        @for (category of permissionCategories; track category.name) {
+          <div class="permission-group">
+            <h4 class="category-title">{{ category.name }}</h4>
+            <div class="permission-list">
+              @for (perm of category.perms; track perm.id) {
+                <div class="permission-item">
+                  <label [for]="perm.id" class="perm-label">{{ perm.label }}</label>
+                  <p-toggleswitch [inputId]="perm.id" [(ngModel)]="newUserPerms[perm.id]"></p-toggleswitch>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
   </div>
   <ng-template pTemplate="footer">
     <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="visible = false" />

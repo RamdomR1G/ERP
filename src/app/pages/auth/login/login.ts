@@ -31,18 +31,18 @@ export class LoginComponent {
 
   onLogin() {
     // ── SIMULADOR DE "TOKEN DE PERMISOS" DEL BACKEND (JWT) ──
-    const adminEmail = 'admin@admin.com';
     
-    if (this.email === adminEmail) {
-      console.log('Login: Admin User. Receiving full access token.');
-      this.authService.setCurrentUser({ email: this.email, name: 'Admin' });
-      this.authService.setPermissions([
-        'group:view', 'group:add', 'group:edit', 'group:delete',
-        'users:view', 'user:add', 'user:edit', 'user:delete',
-        'ticket:view', 'ticket:add', 'ticket:edit', 'ticket:delete', 'ticket:edit_state'
-      ]);
+    // 1. Check if user exists in our central mock database
+    const dbUsers = this.authService.getUsers();
+    const matchedUser = dbUsers.find(u => u.email.toLowerCase() === this.email.toLowerCase());
+
+    if (matchedUser) {
+      console.log(`Login: Found User (${matchedUser.name}) in DB. Loading their toggled permissions.`);
+      this.authService.setCurrentUser({ email: matchedUser.email, name: matchedUser.name });
+      this.authService.setPermissions(matchedUser.permissions || []);
     } else {
-      console.log(`Login: Common User (${this.email}). Receiving limited token.`);
+      // 2. Fallback for unrecognized emails during dev testing
+      console.log(`Login: Unrecognized User (${this.email}). Receiving default fallback token.`);
       let userName = this.email.split('@')[0];
       const strippedName = userName.toLowerCase().replace(/[^a-z]/g, '');
       if (strippedName === 'johndoe') {

@@ -8,10 +8,12 @@ import { DialogModule } from "primeng/dialog";
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { CheckboxModule } from 'primeng/checkbox';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { PasswordModule } from 'primeng/password';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmationService, MessageService } from 'primeng/api';
-import { AuthService } from '../../../services/auth.service';
+import { AuthService, AppUser } from '../../../services/auth.service';
 import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
@@ -20,7 +22,7 @@ import { HasPermissionDirective } from '../../../directives/has-permission.direc
   imports: [CommonModule, 
     FormsModule, TableModule, ButtonModule, 
     TagModule, DialogModule, InputTextModule, 
-    SelectModule, CheckboxModule, HasPermissionDirective,
+    SelectModule, CheckboxModule, ToggleSwitchModule, PasswordModule, HasPermissionDirective,
     ConfirmDialogModule, ToastModule],
   providers: [ConfirmationService, MessageService],
   templateUrl: './users.html',
@@ -68,16 +70,44 @@ export class UsersComponent implements OnInit {
     { label: 'Inactive',     value: 2,  icon: 'pi pi-times',  color: '#f97316' },
   ];
 
-  // ── USERS ──────────────────────────────────────
-  users = [
-    { id: 1, name: 'Super Admin',   email: 'superadmin@erp.com', password: 'password', role: 'Admin',   group: 'Management', status: 'Active',   joined: 'Jan 2024' },
-    { id: 2, name: 'Alice Johnson', email: 'alice@erp.com', password: 'password', role: 'Admin',   group: 'Management', status: 'Active',   joined: 'Jan 2024' },
-    { id: 3, name: 'Bob Smith',     email: 'bob@erp.com',   password: 'password', role: 'User',    group: 'Sales',      status: 'Active',   joined: 'Mar 2024' },
-    { id: 4, name: 'Carol White',   email: 'carol@erp.com', password: 'password', role: 'User',    group: 'Sales',      status: 'Inactive', joined: 'Feb 2024' },
-    { id: 5, name: 'David Lee',     email: 'david@erp.com', password: 'password', role: 'Manager', group: 'Management', status: 'Active',   joined: 'Apr 2024' },
-    { id: 6, name: 'Eva Brown',     email: 'eva@erp.com',   password: 'password', role: 'User',    group: 'Support',    status: 'Active',   joined: 'Jun 2024' },
-    { id: 7, name: 'Frank Miller',  email: 'frank@erp.com', password: 'password', role: 'Manager', group: 'Support',    status: 'Inactive', joined: 'Aug 2024' },
+  // ── PERMISSIONS MATRIX ────────────────────────
+  permissionCategories = [
+    {
+      name: 'Tickets',
+      perms: [
+        { id: 'ticket:view', label: 'View Tickets' },
+        { id: 'ticket:add', label: 'Create Tickets' },
+        { id: 'ticket:edit', label: 'Master Edit Tickets' },
+        { id: 'ticket:edit_state', label: 'Move Assigned Tickets' },
+        { id: 'ticket:delete', label: 'Delete Tickets' },
+      ]
+    },
+    {
+      name: 'Users',
+      perms: [
+        { id: 'users:view', label: 'View Users' },
+        { id: 'user:add', label: 'Create Users' },
+        { id: 'user:edit', label: 'Edit Users' },
+        { id: 'user:delete', label: 'Delete Users' },
+      ]
+    },
+    {
+      name: 'Groups',
+      perms: [
+        { id: 'group:view', label: 'View Groups' },
+        { id: 'group:add', label: 'Create Groups' },
+        { id: 'group:edit', label: 'Edit Groups' },
+        { id: 'group:delete', label: 'Delete Groups' },
+      ]
+    }
   ];
+
+  newUserPerms: { [key: string]: boolean } = {};
+
+  // ── USERS ──────────────────────────────────────
+  get users(): AppUser[] {
+    return this.authService.getUsers();
+  }
 
   getUserSeverity(status: string): 'success' | 'danger' {
     return status === 'Active' ? 'success' : 'danger';
@@ -93,19 +123,24 @@ export class UsersComponent implements OnInit {
     this.visible = true;
   }
 
-  editUser(user: any) {
+  editUser(user: AppUser) {
     this.editingUserId = user.id;
     this.newUserName = user.name;
     this.newUserEmail = user.email;
-    this.newUserPassword = user.password;
+    this.newUserPassword = user.password || '';
     this.newUserRole = user.role;
     this.newUserGroup = user.group;
     this.newUserStatus = user.status;
     this.newUserJoined = user.joined;
+    
+    this.newUserPerms = {};
+    if (user.permissions) {
+      user.permissions.forEach(p => this.newUserPerms[p] = true);
+    }
     this.visible = true;
   }
 
-  deleteUser(user: any) {
+  deleteUser(user: AppUser) {
     if (user.email === 'superadmin@erp.com') {
       this.messageService.add({severity:'error', summary:'Denied', detail:'Cannot delete the Super Admin account.'});
       return;
@@ -116,7 +151,7 @@ export class UsersComponent implements OnInit {
       header: 'Delete Confirmation',
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
-        this.users = this.users.filter(u => u.id !== user.id);
+        this.authService.deleteUser(user.id);
         this.messageService.add({severity:'success', summary:'Deleted', detail:'User removed successfully.'});
       }
     });
@@ -128,26 +163,28 @@ export class UsersComponent implements OnInit {
         return;
     }
 
+    // Extract selected permissions
+    const selectedPerms = Object.keys(this.newUserPerms).filter(k => this.newUserPerms[k]);
+
     if (this.editingUserId) {
         // Update existing user
-        const idx = this.users.findIndex(u => u.id === this.editingUserId);
-        if (idx !== -1) {
-            this.users[idx] = {
-                ...this.users[idx],
-                name: this.newUserName,
-                email: this.newUserEmail,
-                password: this.newUserPassword,
-                role: this.newUserRole,
-                group: this.newUserGroup,
-                status: this.newUserStatus,
-                joined: this.newUserJoined
-            };
-            this.messageService.add({severity:'success', summary:'Success', detail:'User updated successfully.'});
-        }
+        this.authService.updateUser({
+            id: this.editingUserId,
+            name: this.newUserName,
+            email: this.newUserEmail,
+            password: this.newUserPassword,
+            role: this.newUserRole,
+            group: this.newUserGroup,
+            status: this.newUserStatus,
+            joined: this.newUserJoined,
+            permissions: selectedPerms
+        });
+        this.messageService.add({severity:'success', summary:'Success', detail:'User updated successfully.'});
     } else {
         // Create new
-        const newId = this.users.length > 0 ? Math.max(...this.users.map(u => u.id)) + 1 : 1;
-        this.users.unshift({
+        const currentUsers = this.authService.getUsers();
+        const newId = currentUsers.length > 0 ? Math.max(...currentUsers.map(u => u.id)) + 1 : 1;
+        this.authService.addUser({
             id: newId,
             name: this.newUserName,
             email: this.newUserEmail,
@@ -155,7 +192,8 @@ export class UsersComponent implements OnInit {
             role: this.newUserRole,
             group: this.newUserGroup,
             status: this.newUserStatus,
-            joined: this.newUserJoined
+            joined: this.newUserJoined,
+            permissions: selectedPerms
         });
         this.messageService.add({severity:'success', summary:'Success', detail:'User created successfully.'});
     }
@@ -173,5 +211,6 @@ export class UsersComponent implements OnInit {
     this.newUserGroup = '';
     this.newUserStatus = 'Active';
     this.newUserJoined = '';
+    this.newUserPerms = {};
   }
 }

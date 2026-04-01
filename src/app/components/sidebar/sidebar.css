@@ -36,4 +36,8 @@
   left: 1rem;
   font-size: 0.8rem;
   color: #9ca3af;
+  position: fixed;
+  top: 94%;
+  left: 0;
+  z-index: 1000;
 }
