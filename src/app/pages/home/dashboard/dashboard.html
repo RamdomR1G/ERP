@@ -9,7 +9,7 @@
     </div>
     
     <div class="workspace-grid">
-      @for (group of authService.getAvailableGroups(); track group.id) {
+      @for (group of groupsData; track group.id) {
         <p-card (click)="selectGroup(group)" styleClass="workspace-card cursor-pointer hover:shadow-2 transition-all transition-duration-300">
           <div class="workspace-content flex flex-column align-items-center justify-content-center p-4">
             <div class="workspace-icon mb-3" [style.color]="'var(--primary-color)'">

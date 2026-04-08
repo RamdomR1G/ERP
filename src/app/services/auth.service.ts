@@ -33,17 +33,13 @@ export class AuthService {
   private readonly apiUrl = 'http://localhost:3000/api/users';
 
   // ── IDENTIDAD DEL USUARIO ─────────────────────────────────────────────
-  private currentUserData: { email: string; name: string } | null = null;
+  private currentUserData: { id?: string, email: string; name: string } | null = null;
   
   // ── PERMISOS DEL USUARIO ──────────────────────────────────────────────
   private currentUserPermissions: string[] = [];
 
   // ── ESTADO DEL GRUPO DE TRABAJO ───────────────────────────────────────
-  private availableGroups: UserGroup[] = [
-    { id: 'management', name: 'Management', icon: 'pi pi-briefcase', members: 2, description: 'Executive and administrative staff', color: '#6366f1' },
-    { id: 'sales', name: 'Sales', icon: 'pi pi-chart-line', members: 2, description: 'Sales reps and account managers', color: '#22c55e' },
-    { id: 'support', name: 'Support', icon: 'pi pi-headphones', members: 2, description: 'Customer support and helpdesk team', color: '#0ea5e9' }
-  ];
+  private availableGroups: UserGroup[] = [];
   private activeGroup: UserGroup | null = null;
 
   constructor() {
@@ -57,7 +53,7 @@ export class AuthService {
     if (savedUser) {
       this.currentUserData = JSON.parse(savedUser);
     } else {
-      this.currentUserData = { email: 'admin@admin.com', name: 'Admin' };
+      this.currentUserData = { id: '0000', email: 'admin@admin.com', name: 'Admin' };
     }
 
     if (savedPerms) {
@@ -85,7 +81,7 @@ export class AuthService {
     return this.currentUserPermissions.includes(permissionName);
   }
 
-  setCurrentUser(user: { email: string; name: string }) {
+  setCurrentUser(user: { id?: string, email: string; name: string }) {
     this.currentUserData = user;
     sessionStorage.setItem('mockUser', JSON.stringify(user));
   }
@@ -101,7 +97,7 @@ export class AuthService {
     return this.http.post(`${this.apiUrl}/login`, { email, password }).pipe(
       tap((response: any) => {
         if (response.user) {
-          this.setCurrentUser({ email: response.user.email, name: response.user.name });
+          this.setCurrentUser({ id: response.user.id, email: response.user.email, name: response.user.name });
           this.setPermissions(response.user.permissions || []);
         }
       })

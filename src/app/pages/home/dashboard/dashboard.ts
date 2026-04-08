@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { AuthService, UserGroup } from '../../../services/auth.service';
+import { GroupService } from '../../../services/group.service';
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -15,6 +16,14 @@ import { Router } from '@angular/router';
   styleUrl: './dashboard.css'
 })
 export class DashboardComponent {
+  groupsData: UserGroup[] = [];
+
+  constructor(public authService: AuthService, private groupService: GroupService, private router: Router, private cdr: ChangeDetectorRef) {
+    this.groupService.getGroups().subscribe(groups => {
+      this.groupsData = groups;
+      this.cdr.detectChanges(); // Forzar actualización visual
+    });
+  }
 
   // ── TOTAL N CARDS ──────────────────────────────
   stats = [
@@ -51,7 +60,6 @@ export class DashboardComponent {
   }
 
   // ── SELECTION LOGIC ────────────────────────
-  constructor(public authService: AuthService, private router: Router) {}
 
   selectGroup(group: UserGroup) {
     this.authService.setActiveGroup(group);

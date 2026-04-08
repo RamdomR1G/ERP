@@ -109,8 +109,8 @@
               </div>
               <h4 class="ticket-title">{{ticket.title}}</h4>
               <div class="card-bottom">
-                <span class="assignee"><i class="pi pi-user"></i> {{ticket.assignedTo}}</span>
-                <span class="date" style="font-size: 0.75rem;"><i class="pi pi-calendar"></i> {{ticket.deadline || ticket.createdOn}}</span>
+                <span class="assignee"><i class="pi pi-user"></i> {{getUserName(ticket.assigned_to)}}</span>
+                <span class="date" style="font-size: 0.75rem;"><i class="pi pi-calendar"></i> {{ticket.deadline || (ticket.created_on | date:'shortDate')}}</span>
               </div>
             </p-card>
           } @empty {
@@ -134,8 +134,8 @@
               </div>
               <h4 class="ticket-title">{{ticket.title}}</h4>
               <div class="card-bottom">
-                <span class="assignee"><i class="pi pi-user"></i> {{ticket.assignedTo}}</span>
-                <span class="date" style="font-size: 0.75rem;"><i class="pi pi-calendar"></i> {{ticket.deadline || ticket.createdOn}}</span>
+                <span class="assignee"><i class="pi pi-user"></i> {{getUserName(ticket.assigned_to)}}</span>
+                <span class="date" style="font-size: 0.75rem;"><i class="pi pi-calendar"></i> {{ticket.deadline || (ticket.created_on | date:'shortDate')}}</span>
               </div>
             </p-card>
           } @empty {
@@ -159,8 +159,8 @@
               </div>
               <h4 class="ticket-title">{{ticket.title}}</h4>
               <div class="card-bottom">
-                <span class="assignee"><i class="pi pi-user"></i> {{ticket.assignedTo}}</span>
-                <span class="date" style="font-size: 0.75rem;"><i class="pi pi-calendar"></i> {{ticket.deadline || ticket.createdOn}}</span>
+                <span class="assignee"><i class="pi pi-user"></i> {{getUserName(ticket.assigned_to)}}</span>
+                <span class="date" style="font-size: 0.75rem;"><i class="pi pi-calendar"></i> {{ticket.deadline || (ticket.created_on | date:'shortDate')}}</span>
               </div>
             </p-card>
           } @empty {
@@ -184,8 +184,8 @@
               </div>
               <h4 class="ticket-title">{{ticket.title}}</h4>
               <div class="card-bottom">
-                <span class="assignee"><i class="pi pi-user"></i> {{ticket.assignedTo}}</span>
-                <span class="date" style="font-size: 0.75rem;"><i class="pi pi-calendar"></i> {{ticket.deadline || ticket.createdOn}}</span>
+                <span class="assignee"><i class="pi pi-user"></i> {{getUserName(ticket.assigned_to)}}</span>
+                <span class="date" style="font-size: 0.75rem;"><i class="pi pi-calendar"></i> {{ticket.deadline || (ticket.created_on | date:'shortDate')}}</span>
               </div>
             </p-card>
           } @empty {
@@ -229,8 +229,8 @@
             <td>{{ticket.title}}</td>
             <td><p-tag [value]="ticket.status" severity="secondary"></p-tag></td>
             <td><p-tag [value]="ticket.priority" [severity]="getTicketSeverity(ticket.priority)"></p-tag></td>
-            <td>{{ticket.assignedTo}}</td>
-            <td>{{ticket.deadline || ticket.createdOn}}</td>
+            <td>{{getUserName(ticket.assigned_to)}}</td>
+            <td>{{ticket.deadline || (ticket.created_on | date:'shortDate')}}</td>
           </tr>
         </ng-template>
 
@@ -255,7 +255,7 @@
           </div>
           <div class="recent-meta">
             <p-tag [value]="ticket.status" severity="secondary"></p-tag>
-            <span class="date">{{ticket.createdOn}}</span>
+            <span class="date">{{ticket.created_on | date:'shortDate'}}</span>
           </div>
         </div>
       }
@@ -305,25 +305,25 @@
       <div class="detail-sidebar">
         <div class="field">
           <label for="status">Status</label>
-          <p-select [options]="statuses" [(ngModel)]="newTicketStatus" optionLabel="name" optionValue="name" placeholder="Select Status" class="w-full" [disabled]="!canEditFull() && !canEditPartial()"></p-select>
+          <p-select [options]="statuses" [(ngModel)]="newTicketStatus" optionLabel="name" optionValue="name" placeholder="Select Status" class="w-full" appendTo="body" [disabled]="!canEditFull() && !canEditPartial()"></p-select>
         </div>
         <div class="field">
           <label for="assign">Assignee</label>
-          <input pInputText id="assign" [(ngModel)]="newTicketAssignedTo" class="w-full" [disabled]="!canEditFull()" />
+          <p-select [options]="systemUsers" [(ngModel)]="newTicketAssignedTo" optionLabel="name" optionValue="id" placeholder="Select User" class="w-full" appendTo="body" [disabled]="!canEditFull()"></p-select>
         </div>
         <div class="field">
           <label for="priority">Priority</label>
-          <p-select [options]="priorities" [(ngModel)]="newTicketPriority" optionLabel="name" optionValue="name" placeholder="Select Priority" class="w-full" [disabled]="!canEditFull()"></p-select>
+          <p-select [options]="priorities" [(ngModel)]="newTicketPriority" optionLabel="name" optionValue="name" placeholder="Select Priority" class="w-full" appendTo="body" [disabled]="!canEditFull()"></p-select>
         </div>
         
         @if (editingTicketRef) {
           <div class="field-readonly mt-2">
             <span class="label">Created By:</span>
-            <span class="value">{{editingTicketRef.createdBy}}</span>
+            <span class="value">{{getUserName(editingTicketRef.created_by)}}</span>
           </div>
           <div class="field-readonly">
             <span class="label">Created On:</span>
-            <span class="value">{{editingTicketRef.createdOn}}</span>
+            <span class="value">{{editingTicketRef.created_on | date:'shortDate'}}</span>
           </div>
           <div class="field-readonly">
             <span class="label">Deadline:</span>

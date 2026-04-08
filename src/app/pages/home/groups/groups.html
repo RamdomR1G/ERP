@@ -1,23 +1,25 @@
 <div class="groups">
+  <p-toast></p-toast>
+  <p-confirmDialog></p-confirmDialog>
 
   <!-- MODAL NEW GROUP -->
-<p-dialog header="New Group" [(visible)]="visible" [style]="{ width: '30rem' }" [modal]="true">
-  <div class="field">
-    <label for="groupName">Group Name</label>
-    <input pInputText id="groupName" [(ngModel)]="newGroupName"
-           placeholder="e.g. Marketing" class="w-full" />
-  </div>
-  <div class="field">
-    <label for="groupDesc">Description</label>
-    <input pInputText id="groupDesc" [(ngModel)]="newGroupDescription"
-           placeholder="Brief description" class="w-full" />
-  </div>
+  <p-dialog [header]="editingGroupId ? 'Edit Group' : 'New Group'" [(visible)]="visible" [style]="{ width: '30rem' }" [modal]="true">
+    <div class="field">
+      <label for="groupName">Group Name</label>
+      <input pInputText id="groupName" [(ngModel)]="newGroupName"
+             placeholder="e.g. Marketing" class="w-full" />
+    </div>
+    <div class="field">
+      <label for="groupDesc">Description</label>
+      <input pInputText id="groupDesc" [(ngModel)]="newGroupDescription"
+             placeholder="Brief description" class="w-full" />
+    </div>
 
-  <ng-template pTemplate="footer">
-    <p-button label="Cancel" severity="secondary" (onClick)="visible = false" />
-    <p-button label="Save Group" icon="pi pi-check" (onClick)="saveGroup()" />
-  </ng-template>
-</p-dialog>
+    <ng-template pTemplate="footer">
+      <p-button label="Cancel" severity="secondary" (onClick)="visible = false" />
+      <p-button [label]="editingGroupId ? 'Update' : 'Save Group'" icon="pi pi-check" (onClick)="saveGroup()" />
+    </ng-template>
+  </p-dialog>
 
   <h2 class="page-title">Groups Management</h2>
 
@@ -58,8 +60,8 @@
           <div class="group-actions" style="display: flex; gap: 0.5rem; justify-content: flex-end; width: 100%;">
             <p-button label="View Dashboard" [outlined]="true" size="small" (onClick)="goToDashboard(group.id)" styleClass="mr-auto"></p-button>
             <div>
-              <p-button *appHasPermission="'group:edit'" icon="pi pi-pencil" [text]="true" severity="info" size="small" />
-              <p-button *appHasPermission="'group:delete'" icon="pi pi-trash" [text]="true" severity="danger" size="small" />
+              <p-button *appHasPermission="'group:edit'" icon="pi pi-pencil" [text]="true" severity="info" size="small" (onClick)="editGroup(group)"></p-button>
+              <p-button *appHasPermission="'group:delete'" icon="pi pi-trash" [text]="true" severity="danger" size="small" (onClick)="confirmDeleteGroup(group)"></p-button>
             </div>
           </div>
         </div>
