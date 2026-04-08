@@ -83,7 +83,7 @@
               <tr>
                 <th pSortableColumn="id">ID <p-sortIcon field="id"></p-sortIcon></th>
                 <th pSortableColumn="title">Title <p-sortIcon field="title"></p-sortIcon></th>
-                <th pSortableColumn="project">Project <p-sortIcon field="project"></p-sortIcon></th>
+                <th pSortableColumn="creator.name">Creator <p-sortIcon field="creator.name"></p-sortIcon></th>
                 <th pSortableColumn="status">Status <p-sortIcon field="status"></p-sortIcon></th>
                 <th pSortableColumn="priority">Priority <p-sortIcon field="priority"></p-sortIcon></th>
                 <th pSortableColumn="deadline">Deadline <p-sortIcon field="deadline"></p-sortIcon></th>
@@ -93,10 +93,10 @@
               <tr class="row-item">
                 <td><strong>#{{ticket.id}}</strong></td>
                 <td>{{ticket.title}}</td>
-                <td><span class="muted-text">{{ticket.project}}</span></td>
+                <td><span class="muted-text">{{ticket.creator?.name || 'Unknown'}}</span></td>
                 <td><p-tag [value]="ticket.status" severity="secondary"></p-tag></td>
                 <td><p-tag [value]="ticket.priority" [severity]="getTicketSeverity(ticket.priority)"></p-tag></td>
-                <td>{{ticket.deadline}}</td>
+                <td>{{ticket.deadline || (ticket.created_on | date:'shortDate')}}</td>
               </tr>
             </ng-template>
             <ng-template pTemplate="emptymessage">

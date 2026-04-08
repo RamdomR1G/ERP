@@ -3,11 +3,14 @@ const supabase = createClient(process.env.SUPABASE_URL || '', process.env.SUPABA
 
 exports.getTickets = async (req, res) => {
     try {
-        const { group_id } = req.query;
+        const { group_id, assigned_to } = req.query;
         let query = supabase.from('tickets').select('*, assigned_user:users!assigned_to(name), creator:users!created_by(name)');
         
         if (group_id) {
             query = query.eq('group_id', group_id);
+        }
+        if (assigned_to) {
+            query = query.eq('assigned_to', assigned_to);
         }
 
         const { data, error } = await query;

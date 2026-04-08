@@ -18,7 +18,7 @@
   
   @if (!isLandingPage) {
     <p-menu #menu [model]="items" [popup]="true" />
-    <p-button icon="pi pi-user" (onClick)="menu.toggle($event)" />
+    <p-button icon="pi pi-user" [label]="userNameContext" [text]="true" styleClass="text-color" (onClick)="menu.toggle($event)" />
   } @else {
     <div style="display: flex; gap: 0.75rem;">
       <p-button label="Sign In" [text]="true" styleClass="text-white" (onClick)="goToLogin()" />

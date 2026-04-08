@@ -28,6 +28,10 @@ export class TicketService {
     return this.http.get<Ticket[]>(`${this.apiUrl}?group_id=${groupId}`);
   }
 
+  getUserTickets(userId: string): Observable<Ticket[]> {
+    return this.http.get<Ticket[]>(`${this.apiUrl}?assigned_to=${userId}`);
+  }
+
   createTicket(ticket: Omit<Ticket, 'id'|'created_on'>): Observable<any> {
     return this.http.post(this.apiUrl, ticket);
   }

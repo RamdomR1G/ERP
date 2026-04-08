@@ -3,6 +3,7 @@ import { MenuModule } from 'primeng/menu';
 import { MenuItem, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Router } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-header',
@@ -17,11 +18,16 @@ export class Header {
   @Input() isLandingPage: boolean = false;
 
   router = inject(Router);
+  authService = inject(AuthService);
 
   private messageService = inject(MessageService);
   items: MenuItem[] | undefined;
+  userNameContext: string = 'Profile';
 
   ngOnInit(): void {
+    const user: any = this.authService.getCurrentUser();
+    this.userNameContext = user && user.name ? user.name : 'Unknown User';
+
     this.items = [
       {
         label: 'Documents',
@@ -37,10 +43,10 @@ export class Header {
         ]
       }, 
       {
-        label: 'Profile',
+        label: this.userNameContext,
         items: [
           {
-            label: 'Perfil',
+            label: 'My Profile',
             icon: 'pi pi-user',
             command: () => { this.navigate('/home/profile'); }
           },
@@ -51,7 +57,10 @@ export class Header {
           {
             label: 'Logout',
             icon: 'pi pi-sign-out',
-            command: () => { this.navigate('/auth/login'); }
+            command: () => {
+                sessionStorage.clear();
+                this.navigate('/auth/login'); 
+            }
           }
         ]
       }

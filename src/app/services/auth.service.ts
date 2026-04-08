@@ -33,7 +33,7 @@ export class AuthService {
   private readonly apiUrl = 'http://localhost:3000/api/users';
 
   // ── IDENTIDAD DEL USUARIO ─────────────────────────────────────────────
-  private currentUserData: { id?: string, email: string; name: string } | null = null;
+  private currentUserData: any | null = null;
   
   // ── PERMISOS DEL USUARIO ──────────────────────────────────────────────
   private currentUserPermissions: string[] = [];
@@ -81,7 +81,7 @@ export class AuthService {
     return this.currentUserPermissions.includes(permissionName);
   }
 
-  setCurrentUser(user: { id?: string, email: string; name: string }) {
+  setCurrentUser(user: any) {
     this.currentUserData = user;
     sessionStorage.setItem('mockUser', JSON.stringify(user));
   }
@@ -97,7 +97,7 @@ export class AuthService {
     return this.http.post(`${this.apiUrl}/login`, { email, password }).pipe(
       tap((response: any) => {
         if (response.user) {
-          this.setCurrentUser({ id: response.user.id, email: response.user.email, name: response.user.name });
+          this.setCurrentUser(response.user);
           this.setPermissions(response.user.permissions || []);
         }
       })

@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { CardModule } from 'primeng/card';
 import { TagModule } from 'primeng/tag';
 import { TableModule } from 'primeng/table';
+import { AuthService } from '../../../services/auth.service';
+import { TicketService } from '../../../services/ticket.service';
 
 @Component({
   selector: 'app-profile',
@@ -14,12 +16,15 @@ import { TableModule } from 'primeng/table';
 })
 export class ProfileComponent implements OnInit {
 
-  user = {
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    role: 'Developer',
-    group: 'Engineering',
-    joined: '2023-01-15',
+  authService = inject(AuthService);
+  ticketService = inject(TicketService);
+
+  user: any = {
+    name: 'Loading...',
+    email: '...',
+    role: '...',
+    group: '...',
+    joined: '...',
     avatar: 'https://primefaces.org/cdn/primeng/images/avatar/amyelsner.png'
   };
 
@@ -32,18 +37,31 @@ export class ProfileComponent implements OnInit {
   };
 
   ngOnInit() {
-    this.loadAssignedTickets();
-    this.calculateStats();
+    const currentUser: any = this.authService.getCurrentUser();
+    if (currentUser) {
+      this.user = {
+        name: currentUser.name,
+        email: currentUser.email,
+        role: currentUser.role || 'Member',
+        group: currentUser.group_id || 'Unassigned',
+        joined: currentUser.created_on ? currentUser.created_on.slice(0, 10) : '2023-01-01',
+        avatar: 'https://primefaces.org/cdn/primeng/images/avatar/amyelsner.png'
+      };
+
+      if (currentUser.id) {
+         this.loadAssignedTickets(currentUser.id);
+      }
+    }
   }
 
-  loadAssignedTickets() {
-    // Mock user workload
-    this.assignedTickets = [
-      { id: 1, title: 'Database Migration', project: 'Backend Services', status: 'Pending', priority: '高', deadline: '2023-10-10' },
-      { id: 3, title: 'UI Update', project: 'Frontend App', status: 'Done', priority: '低', deadline: '2023-10-05' },
-      { id: 5, title: 'Write tests', project: 'Backend Services', status: 'Pending', priority: '中', deadline: '2023-10-12' },
-      { id: 8, title: 'Fix Auth bug', project: 'Security Team', status: 'In Progress', priority: '紧急', deadline: '2023-10-08' },
-    ];
+  loadAssignedTickets(userId: string) {
+    this.ticketService.getUserTickets(userId).subscribe({
+      next: (tickets) => {
+        this.assignedTickets = tickets;
+        this.calculateStats();
+      },
+      error: (err) => console.error("Error loading tickets", err)
+    });
   }
 
   calculateStats() {
@@ -54,13 +72,13 @@ export class ProfileComponent implements OnInit {
 
   getTicketSeverity(priority: string): 'success' | 'warn' | 'danger' | 'info' {
     switch (priority) {
-      case '最低':
-      case '极低':
-      case '低': return 'success';
-      case '中': return 'info';
-      case '高':
-      case '极高': return 'warn';
-      case '紧急': return 'danger';
+      case 'Lowest':
+      case 'Very Low':
+      case 'Low': return 'success';
+      case 'Medium': return 'info';
+      case 'High':
+      case 'Very High': return 'warn';
+      case 'Urgent': return 'danger';
       default: return 'info';
     }
   }
