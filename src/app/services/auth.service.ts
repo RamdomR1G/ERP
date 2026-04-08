@@ -1,7 +1,10 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { tap } from 'rxjs/operators';
 
 export interface AppUser {
-  id: number;
+  id: string; // Changed to string for UUID matching backend
   name: string;
   email: string;
   password?: string;
@@ -9,6 +12,7 @@ export interface AppUser {
   group: string;
   status: string;
   joined: string;
+  joined_date?: string; // from backend
   permissions: string[];
 }
 
@@ -25,14 +29,14 @@ export interface UserGroup {
   providedIn: 'root'
 })
 export class AuthService {
+  private http = inject(HttpClient);
+  private readonly apiUrl = 'http://localhost:3000/api/users';
+
   // ── IDENTIDAD DEL USUARIO ─────────────────────────────────────────────
   private currentUserData: { email: string; name: string } | null = null;
   
   // ── PERMISOS DEL USUARIO ──────────────────────────────────────────────
   private currentUserPermissions: string[] = [];
-
-  // ── BASE DE DATOS MOCK DE USUARIOS ────────────────────────────────────
-  private usersDB: AppUser[] = [];
 
   // ── ESTADO DEL GRUPO DE TRABAJO ───────────────────────────────────────
   private availableGroups: UserGroup[] = [
@@ -49,23 +53,6 @@ export class AuthService {
   private loadSession() {
     const savedUser = sessionStorage.getItem('mockUser');
     const savedPerms = sessionStorage.getItem('mockPerms');
-    const savedUsersDB = sessionStorage.getItem('mockUsersDB');
-
-    if (savedUsersDB) {
-      this.usersDB = JSON.parse(savedUsersDB);
-    } else {
-      // Initialize Default Users with integrated permissions
-      this.usersDB = [
-        { id: 1, name: 'Super Admin',   email: 'superadmin@erp.com', password: 'password', role: 'Admin',   group: 'Management', status: 'Active',   joined: 'Jan 2024', permissions: ['group:view', 'group:add', 'group:edit', 'group:delete', 'users:view', 'user:add', 'user:edit', 'user:delete', 'ticket:view', 'ticket:add', 'ticket:edit', 'ticket:delete', 'ticket:edit_state'] },
-        { id: 2, name: 'Admin',         email: 'admin@admin.com',    password: 'password', role: 'Admin',   group: 'Management', status: 'Active',   joined: 'Jan 2024', permissions: ['group:view', 'group:add', 'group:edit', 'group:delete', 'users:view', 'user:add', 'user:edit', 'user:delete', 'ticket:view', 'ticket:add', 'ticket:edit', 'ticket:delete', 'ticket:edit_state'] },
-        { id: 3, name: 'John Doe',      email: 'johndoe@test.com',   password: 'password', role: 'User',    group: 'Sales',      status: 'Active',   joined: 'Mar 2024', permissions: ['group:view', 'ticket:view', 'ticket:edit_state', 'user:view', 'user:edit'] },
-        { id: 4, name: 'Jane Smith',    email: 'janesmith@test.com', password: 'password', role: 'User',    group: 'Sales',      status: 'Inactive', joined: 'Feb 2024', permissions: ['group:view', 'ticket:view', 'ticket:edit_state', 'user:view', 'user:edit'] },
-        { id: 5, name: 'David Lee',     email: 'david@erp.com',      password: 'password', role: 'Manager', group: 'Management', status: 'Active',   joined: 'Apr 2024', permissions: ['group:view', 'ticket:view', 'ticket:edit_state', 'ticket:add', 'user:view'] },
-        { id: 6, name: 'Eva Brown',     email: 'eva@erp.com',        password: 'password', role: 'User',    group: 'Support',    status: 'Active',   joined: 'Jun 2024', permissions: ['group:view', 'ticket:view', 'ticket:edit_state', 'user:view', 'user:edit'] },
-        { id: 7, name: 'Frank Miller',  email: 'frank@erp.com',      password: 'password', role: 'Manager', group: 'Support',    status: 'Inactive', joined: 'Aug 2024', permissions: ['group:view', 'ticket:view', 'ticket:edit_state', 'ticket:add', 'user:view'] },
-      ];
-      this.saveUsersDB();
-    }
 
     if (savedUser) {
       this.currentUserData = JSON.parse(savedUser);
@@ -110,30 +97,51 @@ export class AuthService {
   /**
    * 2. GESTION DE USUARIOS
    */
-  getUsers(): AppUser[] {
-    return this.usersDB;
+  login(email: string, password: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/login`, { email, password }).pipe(
+      tap((response: any) => {
+        if (response.user) {
+          this.setCurrentUser({ email: response.user.email, name: response.user.name });
+          this.setPermissions(response.user.permissions || []);
+        }
+      })
+    );
   }
 
-  saveUsersDB() {
-    sessionStorage.setItem('mockUsersDB', JSON.stringify(this.usersDB));
+  getUsers(): Observable<AppUser[]> {
+    return this.http.get<AppUser[]>(this.apiUrl);
   }
 
-  addUser(user: AppUser) {
-    this.usersDB.unshift(user);
-    this.saveUsersDB();
+  addUser(user: AppUser): Observable<any> {
+    const payload = {
+        name: user.name,
+        email: user.email,
+        password: user.password,
+        role: user.role,
+        group_id: user.group, // Supabase expects group_id
+        status: user.status,
+        permissions: user.permissions
+    };
+    return this.http.post(this.apiUrl, payload);
   }
 
-  updateUser(updatedUser: AppUser) {
-    const idx = this.usersDB.findIndex(u => u.id === updatedUser.id);
-    if (idx !== -1) {
-      this.usersDB[idx] = updatedUser;
-      this.saveUsersDB();
+  updateUser(updatedUser: AppUser): Observable<any> {
+    const payload: any = {
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        group_id: updatedUser.group,
+        status: updatedUser.status,
+        permissions: updatedUser.permissions
+    };
+    if (updatedUser.password) {
+      payload.password = updatedUser.password;
     }
+    return this.http.put(`${this.apiUrl}/${updatedUser.id}`, payload);
   }
 
-  deleteUser(userId: number) {
-    this.usersDB = this.usersDB.filter(u => u.id !== userId);
-    this.saveUsersDB();
+  deleteUser(userId: string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${userId}`);
   }
 
   /**

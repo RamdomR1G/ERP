@@ -2,7 +2,10 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/user.controller');
 const validateSchema = require('../middlewares/validate');
-const { CreateUserSchema, UpdateUserSchema } = require('../schemas/user.schema');
+const { CreateUserSchema, UpdateUserSchema, LoginUserSchema } = require('../schemas/user.schema');
+
+// POST /api/users/login
+router.post('/login', validateSchema(LoginUserSchema), userController.loginUser);
 
 // GET /api/users
 router.get('/', userController.getUsers);

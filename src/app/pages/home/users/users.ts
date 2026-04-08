@@ -41,7 +41,17 @@ export class UsersComponent implements OnInit {
   ];
 
   ngOnInit() {
-    // Server logic check goes here
+    this.loadUsers();
+  }
+
+  loadUsers() {
+    this.authService.getUsers().subscribe({
+      next: (data) => {
+        // Map backend group_id -> group for table display
+        this.usersList = data.map(u => ({ ...u, group: (u as any).group_id || u.group, joined: u.joined_date ? new Date(u.joined_date).toLocaleDateString() : u.joined }));
+      },
+      error: (err) => this.messageService.add({severity:'error', summary:'Error', detail:'Failed to load users.'})
+    });
   }
 
   // ── GROUPS ──────────────────────────────────────
@@ -53,7 +63,8 @@ export class UsersComponent implements OnInit {
 
 
   visible: boolean = false;
-  editingUserId: number | null = null;
+  editingUserId: string | null = null;
+  usersList: AppUser[] = [];
 
   newUserName: string = '';
   newUserEmail: string = '';
@@ -106,7 +117,7 @@ export class UsersComponent implements OnInit {
 
   // ── USERS ──────────────────────────────────────
   get users(): AppUser[] {
-    return this.authService.getUsers();
+    return this.usersList;
   }
 
   getUserSeverity(status: string): 'success' | 'danger' {
@@ -151,8 +162,13 @@ export class UsersComponent implements OnInit {
       header: 'Delete Confirmation',
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
-        this.authService.deleteUser(user.id);
-        this.messageService.add({severity:'success', summary:'Deleted', detail:'User removed successfully.'});
+        this.authService.deleteUser(user.id).subscribe({
+          next: () => {
+            this.messageService.add({severity:'success', summary:'Deleted', detail:'User removed successfully.'});
+            this.loadUsers();
+          },
+          error: (err) => this.messageService.add({severity:'error', summary:'Error', detail:'Failed to remove user.'})
+        });
       }
     });
   }
@@ -166,40 +182,41 @@ export class UsersComponent implements OnInit {
     // Extract selected permissions
     const selectedPerms = Object.keys(this.newUserPerms).filter(k => this.newUserPerms[k]);
 
+    const payload: AppUser = {
+      id: this.editingUserId || '',
+      name: this.newUserName,
+      email: this.newUserEmail,
+      password: this.newUserPassword,
+      role: this.newUserRole,
+      group: this.newUserGroup,
+      status: this.newUserStatus,
+      joined: this.newUserJoined,
+      permissions: selectedPerms
+    };
+
     if (this.editingUserId) {
         // Update existing user
-        this.authService.updateUser({
-            id: this.editingUserId,
-            name: this.newUserName,
-            email: this.newUserEmail,
-            password: this.newUserPassword,
-            role: this.newUserRole,
-            group: this.newUserGroup,
-            status: this.newUserStatus,
-            joined: this.newUserJoined,
-            permissions: selectedPerms
+        this.authService.updateUser(payload).subscribe({
+          next: () => {
+            this.messageService.add({severity:'success', summary:'Success', detail:'User updated successfully.'});
+            this.loadUsers();
+            this.resetForm();
+            this.visible = false;
+          },
+          error: (err) => this.messageService.add({severity:'error', summary:'Error', detail: err.error?.error || 'Failed to update'})
         });
-        this.messageService.add({severity:'success', summary:'Success', detail:'User updated successfully.'});
     } else {
         // Create new
-        const currentUsers = this.authService.getUsers();
-        const newId = currentUsers.length > 0 ? Math.max(...currentUsers.map(u => u.id)) + 1 : 1;
-        this.authService.addUser({
-            id: newId,
-            name: this.newUserName,
-            email: this.newUserEmail,
-            password: this.newUserPassword,
-            role: this.newUserRole,
-            group: this.newUserGroup,
-            status: this.newUserStatus,
-            joined: this.newUserJoined,
-            permissions: selectedPerms
+        this.authService.addUser(payload).subscribe({
+          next: () => {
+            this.messageService.add({severity:'success', summary:'Success', detail:'User created successfully.'});
+            this.loadUsers();
+            this.resetForm();
+            this.visible = false;
+          },
+          error: (err) => this.messageService.add({severity:'error', summary:'Error', detail: err.error?.error || 'Failed to create'})
         });
-        this.messageService.add({severity:'success', summary:'Success', detail:'User created successfully.'});
     }
-    
-    this.resetForm();
-    this.visible = false;
   }
 
   resetForm() {

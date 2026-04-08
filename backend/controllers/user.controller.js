@@ -36,6 +36,40 @@ exports.getUserById = async (req, res) => {
     }
 };
 
+exports.loginUser = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        // 1. Fetch user including password hash
+        const { data: user, error } = await supabase
+            .from('users')
+            .select('id, name, email, role, group_id, status, joined_date, permissions, password_hash')
+            .eq('email', email)
+            .single();
+
+        if (error || !user) {
+            return res.status(401).json({ error: 'Credenciales inválidas' });
+        }
+
+        // 2. Comprobar password usando bcrypt
+        const isMatch = await bcrypt.compare(password, user.password_hash);
+        if (!isMatch) {
+            return res.status(401).json({ error: 'Credenciales inválidas' });
+        }
+
+        // 3. Return user context without the hash
+        delete user.password_hash;
+        
+        res.json({
+            message: 'Autenticación exitosa',
+            user: user
+        });
+
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 exports.createUser = async (req, res) => {
     try {
         const payload = req.body;
