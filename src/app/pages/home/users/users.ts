@@ -1,4 +1,5 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { forkJoin } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
@@ -14,6 +15,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { AuthService, AppUser } from '../../../services/auth.service';
+import { GroupService } from '../../../services/group.service';
 import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
@@ -30,8 +32,10 @@ import { HasPermissionDirective } from '../../../directives/has-permission.direc
 })
 export class UsersComponent implements OnInit {
   authService = inject(AuthService);
+  groupService = inject(GroupService);
   private confirmationService = inject(ConfirmationService);
   private messageService = inject(MessageService);
+  private cdr = inject(ChangeDetectorRef);
 
   // ── ROLES ──────────────────────────────────────
   roles = [
@@ -41,25 +45,41 @@ export class UsersComponent implements OnInit {
   ];
 
   ngOnInit() {
-    this.loadUsers();
-  }
-
-  loadUsers() {
-    this.authService.getUsers().subscribe({
-      next: (data) => {
-        // Map backend group_id -> group for table display
-        this.usersList = data.map(u => ({ ...u, group: (u as any).group_id || u.group, joined: u.joined_date ? new Date(u.joined_date).toLocaleDateString() : u.joined }));
-      },
-      error: (err) => this.messageService.add({severity:'error', summary:'Error', detail:'Failed to load users.'})
+    forkJoin({
+        groups: this.groupService.getGroups(),
+        users: this.authService.getUsers()
+    }).subscribe({
+        next: (res) => {
+            this.groups = res.groups;
+            
+            this.usersList = res.users.map(u => {
+                const groupObj = this.groups.find(g => g.id === (u as any).group_id);
+                return { 
+                    ...u, 
+                    group: groupObj ? groupObj.name : ((u as any).group_id || u.group),
+                    joined: u.joined_date ? new Date(u.joined_date).toLocaleDateString() : u.joined 
+                };
+            });
+            this.updateStats();
+            this.cdr.detectChanges();
+        },
+        error: (err) => this.messageService.add({severity:'error', summary:'Error', detail:'Failed to load data.'})
     });
   }
 
+  updateStats() {
+    const total = this.usersList.length;
+    const active = this.usersList.filter(u => u.status === 'Active').length;
+    const inactive = total - active;
+    this.stats = [
+      { label: 'Total Users',  value: total,  icon: 'pi pi-users',  color: '#6366f1' },
+      { label: 'Active',       value: active, icon: 'pi pi-check',  color: '#0ea5e9' },
+      { label: 'Inactive',     value: inactive, icon: 'pi pi-times',  color: '#f97316' },
+    ];
+  }
+
   // ── GROUPS ──────────────────────────────────────
-  groups = [
-    { name: 'Management', members: 2, description: 'Executive and administrative staff', color: '#6366f1' },
-    { name: 'Sales',      members: 2, description: 'Sales representatives and account managers', color: '#22c55e' },
-    { name: 'Support',    members: 2, description: 'Customer support and helpdesk team', color: '#0ea5e9' },
-  ];
+  groups: any[] = [];
 
 
   visible: boolean = false;
@@ -76,9 +96,9 @@ export class UsersComponent implements OnInit {
 
   // ── STATS ──────────────────────────────────────
   stats = [
-    { label: 'Total Users',  value: 6,  icon: 'pi pi-users',  color: '#6366f1' },
-    { label: 'Active',       value: 4,  icon: 'pi pi-check',  color: '#0ea5e9' },
-    { label: 'Inactive',     value: 2,  icon: 'pi pi-times',  color: '#f97316' },
+    { label: 'Total Users',  value: 0,  icon: 'pi pi-users',  color: '#6366f1' },
+    { label: 'Active',       value: 0,  icon: 'pi pi-check',  color: '#0ea5e9' },
+    { label: 'Inactive',     value: 0,  icon: 'pi pi-times',  color: '#f97316' },
   ];
 
   // ── PERMISSIONS MATRIX ────────────────────────
@@ -164,10 +184,18 @@ export class UsersComponent implements OnInit {
       accept: () => {
         this.authService.deleteUser(user.id).subscribe({
           next: () => {
-            this.messageService.add({severity:'success', summary:'Deleted', detail:'User removed successfully.'});
-            this.loadUsers();
+             this.messageService.add({severity:'success', summary:'Deleted', detail:'User removed successfully.'});
+             this.ngOnInit();
           },
-          error: (err) => this.messageService.add({severity:'error', summary:'Error', detail:'Failed to remove user.'})
+          error: (err) => {
+              const errorMsg = err.error?.error || err.message || 'Failed to remove user.';
+              // Detect foreign key constraint dynamically
+              if (errorMsg.includes('foreign key constraint') || errorMsg.includes('violates foreign key')) {
+                  this.messageService.add({severity:'error', summary:'Error', detail: 'This user cannot be deleted because they are assigned to tickets or groups. Reassign their work first.'});
+              } else {
+                  this.messageService.add({severity:'error', summary:'Error', detail: errorMsg});
+              }
+          }
         });
       }
     });
@@ -179,8 +207,18 @@ export class UsersComponent implements OnInit {
         return;
     }
 
+    if (!this.editingUserId && (!this.newUserPassword || this.newUserPassword.length < 8)) {
+        this.messageService.add({severity:'warn', summary:'Validation', detail:'Password must be at least 8 characters.'});
+        return;
+    }
+
     // Extract selected permissions
     const selectedPerms = Object.keys(this.newUserPerms).filter(k => this.newUserPerms[k]);
+    
+    // Find missing group UUID back from group Name if the component loaded it differently on edits
+    let safeGroupId = this.newUserGroup;
+    const isName = this.groups.find(g => g.name === this.newUserGroup);
+    if(isName) safeGroupId = isName.id;
 
     const payload: AppUser = {
       id: this.editingUserId || '',
@@ -188,33 +226,41 @@ export class UsersComponent implements OnInit {
       email: this.newUserEmail,
       password: this.newUserPassword,
       role: this.newUserRole,
-      group: this.newUserGroup,
+      group: safeGroupId,
       status: this.newUserStatus,
       joined: this.newUserJoined,
       permissions: selectedPerms
+    };
+
+    const handleError = (err: any) => {
+        let msg = err.error?.error || 'Failed to process';
+        if (err.error?.details) {
+            msg += ': ' + JSON.stringify(err.error.details.map((e:any) => e.message));
+        }
+        this.messageService.add({severity:'error', summary:'Error', detail: msg});
     };
 
     if (this.editingUserId) {
         // Update existing user
         this.authService.updateUser(payload).subscribe({
           next: () => {
-            this.messageService.add({severity:'success', summary:'Success', detail:'User updated successfully.'});
-            this.loadUsers();
-            this.resetForm();
-            this.visible = false;
+             this.messageService.add({severity:'success', summary:'Success', detail:'User updated successfully.'});
+             this.ngOnInit();
+             this.resetForm();
+             this.visible = false;
           },
-          error: (err) => this.messageService.add({severity:'error', summary:'Error', detail: err.error?.error || 'Failed to update'})
+          error: handleError
         });
     } else {
         // Create new
         this.authService.addUser(payload).subscribe({
           next: () => {
-            this.messageService.add({severity:'success', summary:'Success', detail:'User created successfully.'});
-            this.loadUsers();
-            this.resetForm();
-            this.visible = false;
+             this.messageService.add({severity:'success', summary:'Success', detail:'User created successfully.'});
+             this.ngOnInit();
+             this.resetForm();
+             this.visible = false;
           },
-          error: (err) => this.messageService.add({severity:'error', summary:'Error', detail: err.error?.error || 'Failed to create'})
+          error: handleError
         });
     }
   }

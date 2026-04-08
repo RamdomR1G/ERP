@@ -141,17 +141,29 @@ exports.updateUser = async (req, res) => {
 exports.deleteUser = async (req, res) => {
     try {
         const { id } = req.params;
-        // Soft delete
+
+        // 1. Business Logic Check: Prevent deletion if user has active/unfinished tickets
+        const { data: tickets, error: ticketError } = await supabase
+            .from('tickets')
+            .select('id, status')
+            .eq('assigned_to', id)
+            .neq('status', 'Done');
+
+        if (!ticketError && tickets && tickets.length > 0) {
+            return res.status(400).json({ error: 'This user cannot be deleted because they have active tickets assigned that are not yet finished. You must reassign or complete them first.' });
+        }
+
+        // 2. Hard delete
         const { data, error } = await supabase
             .from('users')
-            .update({ status: 'Inactive' })
+            .delete()
             .eq('id', id)
             .select('id');
 
         if (error) throw error;
         if (data.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
 
-        res.json({ message: 'Usuario desactivado exitosamente (Soft delete)' });
+        res.json({ message: 'Usuario eliminado exitosamente (Hard delete)' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
