@@ -1,0 +1,12 @@
+{
+  "name": "api-gateway",
+  "version": "1.0.0",
+  "description": "API Gateway for the ERP Kanban",
+  "main": "server.js",
+  "dependencies": {
+    "@fastify/cors": "^9.0.1",
+    "@fastify/reply-from": "^9.0.1",
+    "dotenv": "^16.4.5",
+    "fastify": "^4.26.0"
+  }
+}
