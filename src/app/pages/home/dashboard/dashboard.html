@@ -3,9 +3,9 @@
   <!-- WORKSPACE SELECTION -->
   <div class="selection-container">
     <div class="selection-header">
-      <i class="pi pi-building header-icon"></i>
-      <h2>Welcome Back!</h2>
-      <p>Please select a workspace to continue</p>
+      <i class="pi pi-briefcase header-icon" style="color: #6366f1;"></i>
+      <h2>Welcome Back, {{ currentUser?.name || 'User' }}!</h2>
+      <p class="text-600 mt-2">Here is a summary of your operative workspaces</p>
     </div>
     
     <div class="workspace-grid">
@@ -23,9 +23,9 @@
   </div>
 
   <!-- COMPANY OVERVIEW -->
-  <div class="dashboard">
+  <div class="dashboard mt-5">
     <div class="dashboard-header flex justify-content-between align-items-center mb-4">
-      <h2 class="page-title m-0">Company Overview</h2>
+      <h2 class="page-title m-0">My Command Center</h2>
     </div>
 
     <!-- TOTAL N CARDS -->
@@ -49,41 +49,30 @@
       </div>
     </section>
 
-    <!-- ADVANCE CARDS -->
-    <section class="section">
-      <h3 class="section-title">Highlights</h3>
-      <div class="advance-grid">
-        @for (adv of advances; track adv.title) {
-          <div class="advance-card">
-            <div class="advance-icon" [style.background]="adv.color + '18'" [style.color]="adv.color">
-              <i [class]="adv.icon"></i>
-            </div>
-            <div class="advance-info">
-              <span class="advance-title">{{ adv.title }}</span>
-              <p class="advance-desc">{{ adv.description }}</p>
-            </div>
-          </div>
-        }
-      </div>
-    </section>
-
-    <!-- TABLE -->
-    <section class="section">
-      <h3 class="section-title">Recent Orders</h3>
-      <div class="table-wrapper">
-        <p-table [value]="recentOrders" [tableStyle]="{'min-width': '50rem'}">
+    <!-- TABLE: MY ASSIGNED TICKETS -->
+    <section class="section mt-5">
+      <h3 class="section-title mb-3">My Active Assignments</h3>
+      <div class="table-wrapper shadow-1 border-round-xl border-none">
+        <p-table [value]="personalTickets" [paginator]="true" [rows]="5" [tableStyle]="{'min-width': '50rem'}" styleClass="p-datatable-sm" [rowHover]="true">
           <ng-template pTemplate="header">
             <tr>
-              <th>ID</th><th>Customer</th><th>Product</th><th>Status</th><th>Amount</th>
+              <th>ID</th><th>Title</th><th>Status</th><th>Priority</th><th class="text-right">Action</th>
             </tr>
           </ng-template>
-          <ng-template pTemplate="body" let-order>
+          <ng-template pTemplate="body" let-ticket>
             <tr>
-              <td>{{ order.id }}</td>
-              <td>{{ order.customer }}</td>
-              <td>{{ order.product }}</td>
-              <td><p-tag [value]="order.status" [severity]="getSeverity(order.status)" /></td>
-              <td>{{ order.amount }}</td>
+              <td class="font-bold text-600">#{{ ticket.id }}</td>
+              <td class="font-semibold text-800">{{ ticket.title }}</td>
+              <td><p-tag [value]="ticket.status" [severity]="getSeverity(ticket.status)" /></td>
+              <td><p-tag [value]="ticket.priority" severity="secondary" /></td>
+              <td class="text-right">
+                <p-button icon="pi pi-arrow-right" [text]="true" severity="info" pTooltip="Go to kanban board" (onClick)="jumpToTicket(ticket)" />
+              </td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="5" class="text-center p-4 font-italic text-500">You don't have any tickets assigned to you right now.</td>
             </tr>
           </ng-template>
         </p-table>
