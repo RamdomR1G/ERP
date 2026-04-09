@@ -3,7 +3,7 @@
   <p-confirmDialog></p-confirmDialog>
 
   <!-- MODAL NEW / EDIT USER -->
-<p-dialog [header]="editingUserId ? 'Edit User' : 'New User'" [(visible)]="visible" [style]="{ width: '50rem' }" [modal]="true">
+<p-dialog [header]="editingUserId ? 'Edit User' : 'New User'" [(visible)]="visible" [style]="{ width: '65rem' }" [modal]="true" class="custom-user-dialog">
   <div class="user-form-grid">
     <div class="form-column">
       <h3 class="section-title">Basic Information</h3>
@@ -44,8 +44,25 @@
     </div>
 
     <div class="form-column permissions-section">
-      <h3 class="section-title">Active Permissions</h3>
-      <div class="permissions-container">
+      <div class="flex justify-content-between align-items-center mb-2">
+        <h3 class="section-title">Active Permissions</h3>
+      </div>
+      
+      <div class="field">
+        <label for="permGroupSelect">Configure permissions for:</label>
+        <p-select id="permGroupSelect" [options]="getAssignedGroupsDetails()" 
+                 [(ngModel)]="permissionConfigGroup" 
+                 (onChange)="onGroupConfigChange()"
+                 optionLabel="name" optionValue="id" 
+                 placeholder="Select a group" 
+                 class="w-full" styleClass="w-full"></p-select>
+        <small class="text-secondary" *ngIf="!permissionConfigGroup">Select a group above to edit permissions.</small>
+      </div>
+
+      <div class="permissions-container" *ngIf="permissionConfigGroup">
+        <div class="p-info-message mb-2 p-2 border-round bg-blue-50 text-blue-700 text-xs">
+          <i class="pi pi-info-circle mr-1"></i> These permissions only apply within the selected group.
+        </div>
         @for (category of permissionCategories; track category.name) {
           <div class="permission-group">
             <h4 class="category-title">{{ category.name }}</h4>
@@ -53,7 +70,11 @@
               @for (perm of category.perms; track perm.id) {
                 <div class="permission-item">
                   <label [for]="perm.id" class="perm-label">{{ perm.label }}</label>
-                  <p-toggleswitch [inputId]="perm.id" [(ngModel)]="newUserPerms[perm.id]"></p-toggleswitch>
+                  <p-toggleswitch 
+                      [inputId]="perm.id" 
+                      [(ngModel)]="permissionCheckboxes[perm.id]" 
+                      (onChange)="onTogglePerm()">
+                  </p-toggleswitch>
                 </div>
               }
             </div>

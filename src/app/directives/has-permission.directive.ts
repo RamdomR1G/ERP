@@ -1,12 +1,13 @@
 import { Directive, Input, TemplateRef, ViewContainerRef, inject } from '@angular/core';
 import { AuthService } from '../services/auth.service';
+import { PermissionService } from '../services/permission.service';
 
 @Directive({
   selector: '[appHasPermission]',
   standalone: true
 })
 export class HasPermissionDirective {
-  private authService = inject(AuthService);
+  private permissionService = inject(PermissionService);
   private templateRef = inject(TemplateRef);
   private viewContainer = inject(ViewContainerRef);
 
@@ -18,7 +19,7 @@ export class HasPermissionDirective {
         return;
     }
 
-    const hasPerm = this.authService.hasPermission(permission);
+    const hasPerm = this.permissionService.hasPermission(permission);
 
     if (hasPerm && !this.hasView) {
       this.addTemplate();

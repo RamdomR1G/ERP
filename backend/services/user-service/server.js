@@ -39,9 +39,9 @@ fastify.post('/', async (request, reply) => {
             email: payload.email,
             password_hash: password_hash,
             role: payload.role,
-            group_ids: payload.group_ids,
+            group_ids: payload.group_ids || [],
+            group_permissions: payload.group_permissions || {},
             status: payload.status || 'Active',
-            permissions: payload.permissions || []
         }])
         .select('id')
         .single();
@@ -54,7 +54,7 @@ fastify.post('/', async (request, reply) => {
 fastify.get('/', async (request, reply) => {
     const { data, error } = await supabase
         .from('users')
-        .select('id, name, email, role, group_ids, status, joined_date, permissions');
+        .select('id, name, email, role, group_ids, group_permissions, status, joined_date, permissions');
     if (error) return reply.status(500).send({ error: error.message });
     return data;
 });
@@ -64,7 +64,7 @@ fastify.get('/:id', async (request, reply) => {
     const { id } = request.params;
     const { data, error } = await supabase
         .from('users')
-        .select('id, name, email, role, group_ids, status, joined_date, permissions')
+        .select('id, name, email, role, group_ids, group_permissions, status, joined_date, permissions')
         .eq('id', id)
         .single();
     if (error) return reply.status(404).send({ error: 'Usuario no encontrado' });
@@ -80,6 +80,11 @@ fastify.put('/:id', async (request, reply) => {
         const salt = await bcrypt.genSalt(10);
         updates.password_hash = await bcrypt.hash(updates.password, salt);
         delete updates.password;
+    }
+
+    // Ensure group_permissions is an object, not null
+    if (updates.group_permissions === undefined || updates.group_permissions === null) {
+        delete updates.group_permissions; // Don't overwrite with null
     }
 
     const { data, error } = await supabase

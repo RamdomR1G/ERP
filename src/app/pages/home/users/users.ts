@@ -72,6 +72,7 @@ export class UsersComponent implements OnInit {
                     ...u, 
                     group_names: assignedGroups,
                     group_ids: rawGroupIds,
+                    group_permissions: (u as any).group_permissions || {},
                     joined: u.joined_date ? new Date(u.joined_date).toLocaleDateString() : u.joined 
                 };
             });
@@ -108,6 +109,15 @@ export class UsersComponent implements OnInit {
   newUserGroupIds: string[] = [];
   newUserStatus: string = 'Active';
   newUserJoined: string = '';
+
+  // ── PERMISSIONS SYSTEM ──────────────────────
+  // Data Map: { [groupId]: ["perm1", "perm2"] }
+  newUserGroupPermissions: { [key: string]: string[] } = {};
+  
+  // UI State: { [permId]: true/false } - This binds directly to switches
+  permissionCheckboxes: { [key: string]: boolean } = {};
+  
+  permissionConfigGroup: string | null = null; // Currently selected context in modal dropdown
 
   // ── STATS ──────────────────────────────────────
   stats = [
@@ -159,6 +169,75 @@ export class UsersComponent implements OnInit {
     return status === 'Active' ? 'success' : 'danger';
   }
 
+  // Helper to get group name for permission dropdown
+  getAssignedGroupsDetails() {
+    const assignedGroups = this.groups.filter(g => this.newUserGroupIds.includes(g.id));
+    
+    const results = [
+        { id: 'global', name: 'Global (All workspaces)' },
+        ...assignedGroups
+    ];
+    
+    // Add visual indicator to name if it has permissions in the map
+    return results.map(item => {
+        const perms = this.newUserGroupPermissions[item.id] || [];
+        const hasPerms = perms.length > 0;
+        return {
+            ...item,
+            name: hasPerms ? `✓ ${item.name}` : item.name
+        };
+    });
+  }
+
+  // Logic to load checkboxes from the current group's permissions
+  loadPermissionsToCheckboxes() {
+    // 1. Reset ALL to false first (Explicitly)
+    const newState: { [key: string]: boolean } = {};
+    this.permissionCategories.forEach(cat => {
+      cat.perms.forEach(p => {
+        newState[p.id] = false;
+      });
+    });
+
+    // 2. Turn ON only the ones in the map
+    if (this.permissionConfigGroup) {
+      const activePerms = this.newUserGroupPermissions[this.permissionConfigGroup] || [];
+      
+      // If Admin/Wildcard
+      if (activePerms.includes('*') || activePerms.includes('admin')) {
+        Object.keys(newState).forEach(k => newState[k] = true);
+      } else {
+        activePerms.forEach(p => {
+          newState[p] = true;
+        });
+      }
+    }
+    
+    // 3. Replace the WHOLE object to trigger Angular's change detection
+    this.permissionCheckboxes = newState;
+    console.log(`[Users] UI State sync for ${this.permissionConfigGroup}:`, this.permissionCheckboxes);
+    this.cdr.detectChanges();
+  }
+
+  // Logic to save checkboxes back to the data map
+  onTogglePerm() {
+    if (this.permissionConfigGroup) {
+      this.newUserGroupPermissions[this.permissionConfigGroup] = 
+        Object.keys(this.permissionCheckboxes).filter(k => this.permissionCheckboxes[k]);
+      
+      console.log(`[Users] Updated data map:`, this.newUserGroupPermissions);
+      this.cdr.detectChanges();
+    }
+  }
+
+  onGroupConfigChange() {
+    this.loadPermissionsToCheckboxes();
+  }
+
+  updateCurrentGroupPerms() {
+    // This is now handled by onTogglePerm in real-time
+  }
+
   newUser() {
     this.resetForm();
     this.editingUserId = null;
@@ -179,10 +258,25 @@ export class UsersComponent implements OnInit {
     this.newUserStatus = user.status;
     this.newUserJoined = user.joined;
     
-    this.newUserPerms = {};
-    if (user.permissions) {
-      user.permissions.forEach(p => this.newUserPerms[p] = true);
+    // SAFE PARSING of group_permissions
+    try {
+        let raw = (user as any).group_permissions;
+        if (typeof raw === 'string') {
+            this.newUserGroupPermissions = JSON.parse(raw);
+        } else {
+            this.newUserGroupPermissions = raw || {};
+        }
+    } catch (e) {
+        console.error('[Users] Error parsing group_permissions:', e);
+        this.newUserGroupPermissions = {};
     }
+    
+    // Default to 'global' view
+    this.permissionConfigGroup = 'global';
+    
+    // Trigger load to UI
+    this.loadPermissionsToCheckboxes();
+
     this.visible = true;
   }
 
@@ -226,9 +320,9 @@ export class UsersComponent implements OnInit {
         this.messageService.add({severity:'warn', summary:'Validation', detail:'Password must be at least 8 characters.'});
         return;
     }
-
-    // Extract selected permissions
-    const selectedPerms = Object.keys(this.newUserPerms).filter(k => this.newUserPerms[k]);
+    
+    // Sync the current view of permissions before saving
+    this.updateCurrentGroupPerms();
     
     // Ensure group_ids is pure UUIDs
     let safeGroupIds = this.newUserGroupIds.map(val => {
@@ -243,9 +337,10 @@ export class UsersComponent implements OnInit {
       password: this.newUserPassword,
       role: this.newUserRole,
       group_ids: safeGroupIds,
+      group_permissions: this.newUserGroupPermissions,
       status: this.newUserStatus,
       joined: this.newUserJoined,
-      permissions: selectedPerms
+      permissions: [] // Legacy field, keeping empty
     };
 
     const handleError = (err: any) => {
@@ -261,7 +356,7 @@ export class UsersComponent implements OnInit {
         this.authService.updateUser(payload).subscribe({
           next: () => {
              this.messageService.add({severity:'success', summary:'Success', detail:'User updated successfully.'});
-             this.ngOnInit();
+             this.loadUsers(); 
              this.resetForm();
              this.visible = false;
           },
@@ -272,13 +367,43 @@ export class UsersComponent implements OnInit {
         this.authService.addUser(payload).subscribe({
           next: () => {
              this.messageService.add({severity:'success', summary:'Success', detail:'User created successfully.'});
-             this.ngOnInit();
+             this.loadUsers(); 
              this.resetForm();
              this.visible = false;
           },
           error: handleError
         });
     }
+  }
+
+  loadUsers() {
+    this.authService.getUsers().subscribe({
+      next: (users) => {
+        this.usersList = users.map(u => {
+          let assignedGroups: string[] = [];
+          let rawGroupIds = (u as any).group_ids || [];
+          if (!Array.isArray(rawGroupIds) && (u as any).group_id) {
+            rawGroupIds = [(u as any).group_id];
+          }
+          if (Array.isArray(rawGroupIds)) {
+            assignedGroups = rawGroupIds.map((id: string) => {
+              const matched = this.groups.find(g => g.id === id);
+              return matched ? matched.name : id;
+            });
+          }
+          return { 
+            ...u, 
+            group_names: assignedGroups,
+            group_ids: rawGroupIds,
+            group_permissions: (u as any).group_permissions || {},
+            joined: u.joined_date ? new Date(u.joined_date).toLocaleDateString() : u.joined 
+          };
+        });
+        this.updateStats();
+        this.cdr.detectChanges();
+      },
+      error: (err) => this.messageService.add({severity:'error', summary:'Error', detail:'Failed to refresh list.'})
+    });
   }
 
   resetForm() {
@@ -291,5 +416,8 @@ export class UsersComponent implements OnInit {
     this.newUserStatus = 'Active';
     this.newUserJoined = '';
     this.newUserPerms = {};
+    this.newUserGroupPermissions = {};
+    this.permissionCheckboxes = {};
+    this.permissionConfigGroup = null;
   }
 }
