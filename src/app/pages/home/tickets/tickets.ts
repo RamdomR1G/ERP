@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
@@ -10,9 +10,12 @@ import { SelectModule } from 'primeng/select';
 import { CheckboxModule } from 'primeng/checkbox';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../../services/auth.service';
-import { HasPermissionDirective } from '../../../directives/has-permission.directive';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { TicketService } from '../../../services/ticket.service';
+import { GroupService } from '../../../services/group.service';
+import { Observable, forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { TooltipModule } from 'primeng/tooltip';
+import { DividerModule } from 'primeng/divider';
 
 @Component({
   selector: 'app-tickets',
@@ -20,12 +23,15 @@ import { map } from 'rxjs/operators';
   imports: [CommonModule, 
     FormsModule, TableModule, ButtonModule, 
     TagModule, DialogModule, InputTextModule, 
-    SelectModule, CheckboxModule, HasPermissionDirective],
+    SelectModule, CheckboxModule, TooltipModule, DividerModule],
   templateUrl: './tickets.html',
   styleUrl: './tickets.css',
 })
 export class TicketsComponent implements OnInit {
   authService = inject(AuthService);
+  ticketService = inject(TicketService);
+  groupService = inject(GroupService);
+  cdr = inject(ChangeDetectorRef);
   private http = inject(HttpClient);
   
   // ── DROPDOWN OPTIONS ───────────────────────────
@@ -42,8 +48,96 @@ export class TicketsComponent implements OnInit {
     { name: 'Urgent' }
   ];
 
+  currentUser: any;
+  viewFilter: 'All' | 'Group' | 'Mine' = 'All';
+  selectedGroup: any = null;
+  filteredTickets: any[] = [];
+  groupsList: any[] = []; // Stores the dropdown groups array
+
+  // ── VIEW TICKET ────────────────────────────────
+  viewDialogVisible: boolean = false;
+  selectedTicket: any = null;
+
   ngOnInit() {
-    // Server logic check goes here
+    this.currentUser = this.authService.getCurrentUser();
+    this.loadData();
+  }
+
+  loadData() {
+    if (!this.currentUser) return;
+
+    let ticketsReq: Observable<any[]>;
+    if (this.authService.hasPermission('ticket:view')) {
+        ticketsReq = this.ticketService.getAllTickets();
+    } else {
+        ticketsReq = this.ticketService.getUserTickets(this.currentUser.id);
+        this.viewFilter = 'Mine';
+    }
+
+    forkJoin({
+      tickets: ticketsReq,
+      groups: this.groupService.getGroups().pipe(catchError(() => of([])))
+    }).subscribe({
+        next: (res) => {
+            this.tickets = res.tickets;
+            this.groupsList = res.groups;
+            this.applyFilter();
+        },
+        error: (err) => console.error('Failed to load data', err)
+    });
+  }
+
+  applyFilter() {
+      if (!this.currentUser) return;
+      
+      if (this.viewFilter === 'Mine') {
+          this.filteredTickets = this.tickets.filter(t => t.assigned_to === this.currentUser.id);
+      } else if (this.viewFilter === 'Group' && this.selectedGroup) {
+          // Compare with selected dropdown group ID
+          this.filteredTickets = this.tickets.filter(t => t.group_id === this.selectedGroup);
+      } else if (this.viewFilter === 'Group' && !this.selectedGroup) {
+          this.filteredTickets = []; // Wait for selection
+      } else {
+          this.filteredTickets = this.tickets;
+      }
+      this.updateStats();
+      this.cdr.detectChanges();
+  }
+
+  setFilter(filter: 'All' | 'Group' | 'Mine') {
+      if (!this.authService.hasPermission('ticket:view') && filter !== 'Mine') return; 
+      this.viewFilter = filter;
+      this.applyFilter();
+  }
+
+  onGroupSelect(event: any) {
+      if (event.value) {
+          this.viewFilter = 'Group';
+          this.selectedGroup = event.value;
+          this.applyFilter();
+      }
+  }
+
+  openTicketDetails(ticket: any) {
+      this.selectedTicket = ticket;
+      // Resolve beautiful group name if possible
+      const targetGroup = this.groupsList.find(g => g.id === ticket.group_id);
+      if (targetGroup) {
+         this.selectedTicket.safeGroupText = targetGroup.name;
+      }
+      this.viewDialogVisible = true;
+  }
+
+  updateStats() {
+    const total = this.filteredTickets.length;
+    const open = this.filteredTickets.filter(t => t.status === 'Pending' || t.status === 'Open').length;
+    const closed = this.filteredTickets.filter(t => t.status === 'Done' || t.status === 'Closed').length;
+
+    this.stats = [
+        { label: 'Total Tickets', value: total, icon: 'pi pi-ticket', color: '#6366f1' },
+        { label: 'Active', value: open, icon: 'pi pi-check', color: '#0ea5e9' },
+        { label: 'Closed', value: closed, icon: 'pi pi-times', color: '#f97316' },
+      ];
   }
 
   // ── ROLES ──────────────────────────────────────
@@ -61,23 +155,14 @@ export class TicketsComponent implements OnInit {
   ];
 
   // ── TICKETS ──────────────────────────────────────
-  tickets = [
-    { id: 1, title: 'Ticket 1', description: 'Description 1', status: 'Open', priority: 'High', assignedTo: 'John Doe', createdOn: '2022-01-01' },
-    { id: 2, title: 'Ticket 2', description: 'Description 2', status: 'Closed', priority: 'Medium', assignedTo: 'Jane Smith', createdOn: '2022-01-02' },
-    { id: 3, title: 'Ticket 3', description: 'Description 3', status: 'Open', priority: 'Low', assignedTo: 'John Doe', createdOn: '2022-01-03' },
-    { id: 4, title: 'Ticket 4', description: 'Description 4', status: 'Closed', priority: 'High', assignedTo: 'Jane Smith', createdOn: '2022-01-04' },
-    { id: 5, title: 'Ticket 5', description: 'Description 5', status: 'Open', priority: 'Medium', assignedTo: 'John Doe', createdOn: '2022-01-05' },
-    { id: 6, title: 'Ticket 6', description: 'Description 6', status: 'Closed', priority: 'Low', assignedTo: 'Jane Smith', createdOn: '2022-01-06' },
-    { id: 7, title: 'Ticket 7', description: 'Description 7', status: 'Open', priority: 'High', assignedTo: 'John Doe', createdOn: '2022-01-07' },
-    { id: 8, title: 'Ticket 8', description: 'Description 8', status: 'Closed', priority: 'Medium', assignedTo: 'Jane Smith', createdOn: '2022-01-08' },
-    { id: 9, title: 'Ticket 9', description: 'Description 9', status: 'Open', priority: 'Low', assignedTo: 'John Doe', createdOn: '2022-01-09' },
-    { id: 10, title: 'Ticket 10', description: 'Description 10', status: 'Closed', priority: 'High', assignedTo: 'Jane Smith', createdOn: '2022-01-10' },
-  ];
+  tickets: any[] = [];
 
   getTicketSeverity(status: string): 'success' | 'warn' | 'danger' | 'info' {
     switch (status) {
+      case 'Pending': 
       case 'Open': return 'info';
       case 'In Progress': return 'warn';
+      case 'Done': 
       case 'Closed': return 'success';
       default: return 'info';
     }
@@ -85,9 +170,9 @@ export class TicketsComponent implements OnInit {
 
   // ── STATS ──────────────────────────────────────
   stats = [
-    { label: 'Total Tickets', value: 10, icon: 'pi pi-ticket', color: '#6366f1' },
-    { label: 'Open', value: 5, icon: 'pi pi-check', color: '#0ea5e9' },
-    { label: 'Closed', value: 5, icon: 'pi pi-times', color: '#f97316' },
+    { label: 'Total Tickets', value: 0, icon: 'pi pi-ticket', color: '#6366f1' },
+    { label: 'Active', value: 0, icon: 'pi pi-check', color: '#0ea5e9' },
+    { label: 'Closed', value: 0, icon: 'pi pi-times', color: '#f97316' },
   ];
 
   // ── NEW TICKET ─────────────────────────────────

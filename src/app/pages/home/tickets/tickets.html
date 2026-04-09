@@ -1,37 +1,97 @@
 <div class="tickets">
-  <!-- MODAL NEW TICKET -->
-<p-dialog header="New Ticket" [(visible)]="visible" [style]="{ width: '30rem' }" [modal]="true">
-  <div class="field">
-    <label for="ticketTitle">Ticket Title</label>
-    <input pInputText id="ticketTitle" [(ngModel)]="newTicketTitle"
-           placeholder="Enter ticket title" class="w-full" />
-  </div>
-  <div class="field">
-    <label for="ticketDescription">Ticket Description</label>
-    <input pInputText id="ticketDescription" [(ngModel)]="newTicketDescription"
-           placeholder="Enter ticket description" class="w-full" />
-  </div>
-  <div class="field">
-    <label for="ticketStatus">Ticket Status</label>
-    <p-select inputId="ticketStatus" [options]="statuses" [(ngModel)]="newTicketStatus"
-           optionLabel="name" optionValue="name" placeholder="Select Status" appendTo="body"></p-select>
-  </div>
-  <div class="field">
-    <label for="ticketPriority">Ticket Priority</label>
-    <p-select inputId="ticketPriority" [options]="priorities" [(ngModel)]="newTicketPriority"
-           optionLabel="name" optionValue="name" placeholder="Select Priority" appendTo="body"></p-select>
-  </div>
-  <div class="field">
-    <label for="ticketAssignedTo">Ticket Assigned To</label>
-    <input pInputText id="ticketAssignedTo" [(ngModel)]="newTicketAssignedTo"
-           placeholder="Enter assigned to" class="w-full" />
-  </div>
-  <ng-template pTemplate="footer">
-    <p-button label="Cancel" severity="secondary" (onClick)="visible = false" />
-    <p-button label="Save Ticket" icon="pi pi-check" (onClick)="saveTicket()" />
-  </ng-template>
-</p-dialog>
-  <h2 class="page-title">Tickets Management</h2>
+  <!-- TICKET DETAILS MODAL (READ ONLY - DASHBOARD STYLE) -->
+  <p-dialog [header]="'Ticket #' + selectedTicket?.id" [(visible)]="viewDialogVisible" [style]="{ width: '55rem' }" [modal]="true" styleClass="ticket-detail-modal">
+    <div *ngIf="selectedTicket" class="ticket-detail-grid">
+      
+      <!-- MAIN / LEFT COLUMN -->
+      <div class="detail-main">
+        <div class="mb-4">
+            <h2 style="font-size: 1.5rem; color: #1e293b; margin: 0 0 1rem 0;">{{ selectedTicket.title }}</h2>
+            <div class="custom-textarea" style="white-space: pre-wrap; background: #f8fafc; border: 1px solid #e2e8f0; min-height: 100px;">{{ selectedTicket.description || 'No description provided.' }}</div>
+        </div>
+
+        <!-- COMMENTS SECTION -->
+        <div class="comments-section mt-4">
+          <h4>Comments & Activity</h4>
+          <div class="comments-list">
+            @for (comment of selectedTicket.comments; track comment.date + $index) {
+              <div class="comment-item">
+                <div class="comment-header">
+                  <strong>{{comment.author}}</strong>
+                  <span class="comment-date">{{comment.date}}</span>
+                </div>
+                <div class="comment-text">{{comment.text}}</div>
+              </div>
+            } @empty {
+              <div class="empty-state-small">No comments yet.</div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- SIDEBAR / RIGHT COLUMN -->
+      <div class="detail-sidebar">
+        
+        <div class="field-readonly mb-4" style="flex-direction: column; align-items: flex-start; gap: 0.5rem;">
+            <span class="label">Status</span>
+            <p-tag [value]="selectedTicket.status" [severity]="getTicketSeverity(selectedTicket.status)" class="text-lg"></p-tag>
+        </div>
+
+        <div class="field-readonly mb-4" style="flex-direction: column; align-items: flex-start; gap: 0.5rem;">
+            <span class="label">Priority</span>
+            <p-tag [value]="selectedTicket.priority" severity="secondary"></p-tag>
+        </div>
+
+        <div class="field-readonly mb-4" style="flex-direction: column; align-items: flex-start; gap: 0.5rem;">
+            <span class="label">Assigned To</span>
+            <span class="value font-medium text-lg" style="color: #6366f1;">
+              <i class="pi pi-user mr-1"></i> {{ selectedTicket.assigned_user?.name || 'Unassigned' }}
+            </span>
+        </div>
+
+        <p-divider></p-divider>
+        
+        <div class="field-readonly mt-2">
+          <span class="label">Origin Group:</span>
+          <span class="value">{{ selectedTicket.safeGroupText || 'Global / Unknown' }}</span>
+        </div>
+        <div class="field-readonly">
+          <span class="label">Created By:</span>
+          <span class="value">{{ selectedTicket.creator?.name || 'Unknown' }}</span>
+        </div>
+        <div class="field-readonly">
+          <span class="label">Created On:</span>
+          <span class="value">{{ selectedTicket.created_on | date:'shortDate' }}</span>
+        </div>
+        <div class="field-readonly">
+          <span class="label">Deadline:</span>
+          <span class="value" style="color: #ef4444; font-weight: bold;">{{ selectedTicket.deadline ? (selectedTicket.deadline | date:'shortDate') : 'No deadline' }}</span>
+        </div>
+        
+        <div class="history-section mt-4">
+          <h4>History</h4>
+          <div class="history-list">
+            @for (hist of selectedTicket.history; track hist.date + $index) {
+              <div class="history-item">
+                <span class="history-date">{{hist.date}}</span>
+                <span class="history-action">{{hist.action}}</span>
+              </div>
+            } @empty {
+              <div class="empty-state-small">No history available.</div>
+            }
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <ng-template pTemplate="footer">
+      <p-button label="Close View" severity="secondary" [outlined]="true" (onClick)="viewDialogVisible = false" />
+    </ng-template>
+  </p-dialog>
+
+  <!-- TICKETS DASHBOARD (READ ONLY) -->
+  <h2 class="page-title"><i class="pi pi-compass mr-3" style="font-size: 2rem;"></i>Global Tickets Dashboard</h2>
 
   <!-- TOTAL N CARDS -->
   <div class="stats-grid">
@@ -50,30 +110,48 @@
 
   <!-- TICKETS TABLE -->
   <div class="table-wrapper">
-    <div class="tab-header">
-      <span class="tab-subtitle">All registered tickets</span>
-      <p-button *appHasPermission="'ticket:add'" label="New Ticket" icon="pi pi-ticket-plus" (onClick)="newTicket()" />
+    <div class="tab-header flex justify-content-between align-items-center">
+      <span class="tab-subtitle">Monitoring all generated tickets</span>
+      
+      <!-- FILTERS -->
+      <div class="p-buttonset flex align-items-center">
+        <p-button label="All Tickets" [severity]="viewFilter === 'All' ? 'primary' : 'secondary'" (onClick)="setFilter('All')" [disabled]="!authService.hasPermission('ticket:view')" />
+        
+        <p-select *ngIf="authService.hasPermission('ticket:view')"
+                  [options]="groupsList" 
+                  [(ngModel)]="selectedGroup" 
+                  (onChange)="onGroupSelect($event)"
+                  optionLabel="name" 
+                  optionValue="id" 
+                  placeholder="Filter by Group..." 
+                  class="mx-2"></p-select>
+
+        <p-button label="My Tickets" [severity]="viewFilter === 'Mine' ? 'primary' : 'secondary'" (onClick)="setFilter('Mine')" />
+      </div>
     </div>
-    <p-table [value]="tickets" [paginator]="true" [rows]="5" [tableStyle]="{'min-width':'60rem'}">
+    <p-table [value]="filteredTickets" [paginator]="true" [rows]="10" [tableStyle]="{'min-width':'60rem'}">
       <ng-template pTemplate="header">
         <tr>
-          <th>Title</th><th>Description</th><th>Status</th><th>Priority</th><th>Assigned To</th><th>Created On</th><th>Actions</th>
+          <th>ID</th><th>Title</th><th>Status</th><th>Priority</th><th>Creator</th><th>Assigned To</th><th>Deadline</th><th>Actions</th>
         </tr>
       </ng-template>
       <ng-template pTemplate="body" let-ticket>
         <tr>
+          <td><strong>#{{ ticket.id }}</strong></td>
           <td>{{ ticket.title }}</td>
-          <td>{{ ticket.description }}</td>
           <td><p-tag [value]="ticket.status" [severity]="getTicketSeverity(ticket.status)" /></td>
-          <td>{{ ticket.priority }}</td>
-          <td>{{ ticket.assignedTo }}</td>
-          <td>{{ ticket.createdOn }}</td>
+          <td><p-tag [value]="ticket.priority" severity="secondary" /></td>
+          <td><span class="muted-text">{{ ticket.creator?.name || 'Unknown' }}</span></td>
+          <td>{{ ticket.assigned_user?.name || 'Unassigned' }}</td>
+          <td>{{ ticket.deadline || (ticket.created_on | date:'shortDate') }}</td>
           <td>
-            @if (authService.hasPermission('ticket:edit') || authService.hasPermission('ticket:edit_state')) {
-              <p-button icon="pi pi-pencil" [text]="true" severity="info" size="small" />
-            }
-            <p-button *appHasPermission="'ticket:delete'" icon="pi pi-trash" [text]="true" severity="danger" size="small" />
+             <p-button icon="pi pi-eye" [text]="true" severity="info" size="small" (onClick)="openTicketDetails(ticket)" pTooltip="View Details" />
           </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="7" class="text-center p-4">No tickets found for your view permissions.</td>
         </tr>
       </ng-template>
     </p-table>

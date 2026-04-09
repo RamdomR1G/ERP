@@ -24,6 +24,10 @@ export class TicketService {
   private http = inject(HttpClient);
   private apiUrl = 'http://localhost:3000/api/tickets';
 
+  getAllTickets(): Observable<Ticket[]> {
+    return this.http.get<Ticket[]>(this.apiUrl);
+  }
+
   getGroupTickets(groupId: string): Observable<Ticket[]> {
     return this.http.get<Ticket[]>(`${this.apiUrl}?group_id=${groupId}`);
   }
