@@ -8,6 +8,7 @@ import { TagModule } from 'primeng/tag';
 import { DialogModule } from "primeng/dialog";
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
+import { MultiSelectModule } from 'primeng/multiselect';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { PasswordModule } from 'primeng/password';
@@ -24,7 +25,7 @@ import { HasPermissionDirective } from '../../../directives/has-permission.direc
   imports: [CommonModule, 
     FormsModule, TableModule, ButtonModule, 
     TagModule, DialogModule, InputTextModule, 
-    SelectModule, CheckboxModule, ToggleSwitchModule, PasswordModule, HasPermissionDirective,
+    SelectModule, MultiSelectModule, CheckboxModule, ToggleSwitchModule, PasswordModule, HasPermissionDirective,
     ConfirmDialogModule, ToastModule],
   providers: [ConfirmationService, MessageService],
   templateUrl: './users.html',
@@ -53,10 +54,24 @@ export class UsersComponent implements OnInit {
             this.groups = res.groups;
             
             this.usersList = res.users.map(u => {
-                const groupObj = this.groups.find(g => g.id === (u as any).group_id);
+                let assignedGroups: string[] = [];
+                let rawGroupIds = (u as any).group_ids || [];
+                // Compatibilidad migratoria si un usuario aún trae el viejo group_id en vez del nuevo
+                if (!Array.isArray(rawGroupIds) && (u as any).group_id) {
+                    rawGroupIds = [(u as any).group_id];
+                }
+                
+                if (Array.isArray(rawGroupIds)) {
+                    assignedGroups = rawGroupIds.map((id: string) => {
+                        const matched = this.groups.find(g => g.id === id);
+                        return matched ? matched.name : id;
+                    });
+                }
+
                 return { 
                     ...u, 
-                    group: groupObj ? groupObj.name : ((u as any).group_id || u.group),
+                    group_names: assignedGroups,
+                    group_ids: rawGroupIds,
                     joined: u.joined_date ? new Date(u.joined_date).toLocaleDateString() : u.joined 
                 };
             });
@@ -90,7 +105,7 @@ export class UsersComponent implements OnInit {
   newUserEmail: string = '';
   newUserPassword: string = '';
   newUserRole: string = '';
-  newUserGroup: string = '';
+  newUserGroupIds: string[] = [];
   newUserStatus: string = 'Active';
   newUserJoined: string = '';
 
@@ -160,7 +175,7 @@ export class UsersComponent implements OnInit {
     this.newUserEmail = user.email;
     this.newUserPassword = user.password || '';
     this.newUserRole = user.role;
-    this.newUserGroup = user.group;
+    this.newUserGroupIds = Array.isArray(user.group_ids) ? user.group_ids : ((user as any).group_id ? [(user as any).group_id] : []);
     this.newUserStatus = user.status;
     this.newUserJoined = user.joined;
     
@@ -202,8 +217,8 @@ export class UsersComponent implements OnInit {
   }
 
   saveUser() {
-    if (!this.newUserName || !this.newUserEmail || !this.newUserRole || !this.newUserGroup) {
-        this.messageService.add({severity:'warn', summary:'Validation', detail:'Please fill out all required fields.'});
+    if (!this.newUserName || !this.newUserEmail || !this.newUserRole || this.newUserGroupIds.length === 0) {
+        this.messageService.add({severity:'warn', summary:'Validation', detail:'Please fill out all required fields and select at least one group.'});
         return;
     }
 
@@ -215,10 +230,11 @@ export class UsersComponent implements OnInit {
     // Extract selected permissions
     const selectedPerms = Object.keys(this.newUserPerms).filter(k => this.newUserPerms[k]);
     
-    // Find missing group UUID back from group Name if the component loaded it differently on edits
-    let safeGroupId = this.newUserGroup;
-    const isName = this.groups.find(g => g.name === this.newUserGroup);
-    if(isName) safeGroupId = isName.id;
+    // Ensure group_ids is pure UUIDs
+    let safeGroupIds = this.newUserGroupIds.map(val => {
+        const isName = this.groups.find(g => g.name === val);
+        return isName ? isName.id : val;
+    });
 
     const payload: AppUser = {
       id: this.editingUserId || '',
@@ -226,7 +242,7 @@ export class UsersComponent implements OnInit {
       email: this.newUserEmail,
       password: this.newUserPassword,
       role: this.newUserRole,
-      group: safeGroupId,
+      group_ids: safeGroupIds,
       status: this.newUserStatus,
       joined: this.newUserJoined,
       permissions: selectedPerms
@@ -271,7 +287,7 @@ export class UsersComponent implements OnInit {
     this.newUserEmail = '';
     this.newUserPassword = '';
     this.newUserRole = '';
-    this.newUserGroup = '';
+    this.newUserGroupIds = [];
     this.newUserStatus = 'Active';
     this.newUserJoined = '';
     this.newUserPerms = {};

@@ -9,7 +9,7 @@ exports.getUsers = async (req, res) => {
     try {
         const { data, error } = await supabase
             .from('users')
-            .select('id, name, email, role, group_id, status, joined_date, permissions');
+            .select('id, name, email, role, group_ids, status, joined_date, permissions');
         
         if (error) throw error;
         res.json(data);
@@ -23,7 +23,7 @@ exports.getUserById = async (req, res) => {
         const { id } = req.params;
         const { data, error } = await supabase
             .from('users')
-            .select('id, name, email, role, group_id, status, joined_date, permissions')
+            .select('id, name, email, role, group_ids, status, joined_date, permissions')
             .eq('id', id)
             .single();
         
@@ -43,7 +43,7 @@ exports.loginUser = async (req, res) => {
         // 1. Fetch user including password hash
         const { data: user, error } = await supabase
             .from('users')
-            .select('id, name, email, role, group_id, status, joined_date, permissions, password_hash')
+            .select('id, name, email, role, group_ids, status, joined_date, permissions, password_hash')
             .eq('email', email)
             .single();
 
@@ -88,7 +88,7 @@ exports.createUser = async (req, res) => {
                 email: payload.email,
                 password_hash: password_hash,
                 role: payload.role,
-                group_id: payload.group_id,
+                group_ids: payload.group_ids,
                 status: payload.status || 'Active',
                 permissions: payload.permissions || []
             }])

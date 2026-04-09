@@ -20,8 +20,10 @@ const CreateUserSchema = {
       type: "string",
       enum: ["Admin", "User", "Manager", "Guest"]
     },
-    group_id: {
-      type: "string"
+    group_ids: {
+      type: "array",
+      items: { type: "string" },
+      minItems: 1
     },
     status: {
       type: "string",
@@ -33,7 +35,7 @@ const CreateUserSchema = {
       uniqueItems: true
     }
   },
-  required: ["name", "email", "password", "role", "group_id"]
+  required: ["name", "email", "password", "role", "group_ids"]
 };
 
 const UpdateUserSchema = {
@@ -45,7 +47,10 @@ const UpdateUserSchema = {
     email: { type: "string", format: "email" },
     password: { type: "string", minLength: 8 },
     role: { type: "string", enum: ["Admin", "User", "Manager", "Guest"] },
-    group_id: { type: "string" },
+    group_ids: {
+      type: "array",
+      items: { type: "string" }
+    },
     status: { type: "string", enum: ["Active", "Inactive"] },
     permissions: {
       type: "array",

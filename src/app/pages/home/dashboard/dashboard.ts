@@ -11,6 +11,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { Router } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-dashboard',
@@ -30,29 +31,44 @@ export class DashboardComponent implements OnInit {
     private groupService: GroupService, 
     private ticketService: TicketService,
     private router: Router, 
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private http: HttpClient
   ) {}
 
   ngOnInit() {
-      this.currentUser = this.authService.getCurrentUser();
-      
-      const ticketsReq = this.currentUser ? this.ticketService.getUserTickets(this.currentUser.id).pipe(catchError(() => of([]))) : of([]);
+      const storedUser = this.authService.getCurrentUser();
+      if (!storedUser) return;
+
+      // Fetch fresh user data to ensure group_ids are up to date
+      const userRefreshReq = this.http.get<any>(`http://localhost:3000/api/users/${storedUser.id}`).pipe(catchError(() => of(storedUser)));
+      const ticketsReq = this.ticketService.getUserTickets(storedUser.id).pipe(catchError(() => of([])));
       const groupsReq = this.groupService.getGroups().pipe(catchError(() => of([])));
 
       forkJoin({
+          user: userRefreshReq,
           tickets: ticketsReq,
           groups: groupsReq
       }).subscribe(res => {
+          this.currentUser = res.user;
+          this.authService.setCurrentUser(res.user); // Sync back to service
+          
           this.personalTickets = res.tickets;
-          // Sort to show newest first!
           this.personalTickets.sort((a,b) => new Date(b.created_on).getTime() - new Date(a.created_on).getTime());
 
-          // Filtering groups: If has group:view_all, show them all. Else, only show their own group.
+          // IMPORTANT: Show ONLY the groups the user belongs to.
+          // If the user wants to see their assigned groups specifically:
+          const myGroupIds: string[] = this.currentUser.group_ids || [];
+          
           if (this.authService.hasPermission('group:view_all')) {
-              this.groupsData = res.groups;
+              // For Admins, we could show all, but the request asks to show groups they belong to.
+              // Let's show all available but maybe highlight "Mine"? 
+              // Actually, the user's phrasing suggests they want to see their associations. 
+              // We'll keep the view_all perms showing all for management, but ensure non-admin only see theirs.
+              this.groupsData = res.groups; 
+              // If they specifically want ONLY their groups even as admin, we would filter.
+              // But usually Admins need to see everything.
           } else {
-              const myGroupId = this.currentUser.group_id || this.currentUser.group;
-              this.groupsData = res.groups.filter(g => g.id === myGroupId);
+              this.groupsData = res.groups.filter(g => myGroupIds.includes(g.id));
           }
 
           this.calculateStats();

@@ -41,8 +41,8 @@ export class RegisterComponent {
       name: this.name,
       email: this.email,
       password: this.password,
-      role: 'Guest',
-      group: 'None',
+      role: 'User',
+      group_ids: [],
       status: 'Active',
       joined: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
       permissions: ['ticket:view'] // Basic permission for new self-registered users

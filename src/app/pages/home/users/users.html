@@ -32,9 +32,9 @@
                optionLabel="name" optionValue="name" placeholder="Select Role" appendTo="body" class="w-full" styleClass="w-full"></p-select>
       </div>
       <div class="field">
-        <label for="userGroup">User Group</label>
-        <p-select inputId="userGroup" [options]="groups" [(ngModel)]="newUserGroup"
-               optionLabel="name" optionValue="id" placeholder="Select Group" appendTo="body" class="w-full" styleClass="w-full"></p-select>
+        <label for="userGroup">User Groups (Multi-Select)</label>
+        <p-multiSelect inputId="userGroup" [options]="groups" [(ngModel)]="newUserGroupIds"
+               optionLabel="name" optionValue="id" placeholder="Select Groups" appendTo="body" class="w-full" styleClass="w-full" [filter]="false" display="chip"></p-multiSelect>
       </div>
       <div class="field">
         <label for="userStatus">User Status</label>
@@ -109,7 +109,13 @@
           <td>{{ user.email }}</td>
           <td>{{ user.password }}</td>
           <td>{{ user.role }}</td>
-          <td>{{ user.group }}</td>
+          <td>
+            <div class="flex gap-1 flex-wrap">
+               @for (g of user.group_names; track g) {
+                  <p-tag [value]="g" severity="info"></p-tag>
+               }
+            </div>
+          </td>
           <td><p-tag [value]="user.status" [severity]="getUserSeverity(user.status)" /></td>
           <td>{{ user.joined }}</td>
           <td>

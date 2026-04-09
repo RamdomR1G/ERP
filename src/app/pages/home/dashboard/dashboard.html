@@ -5,7 +5,9 @@
     <div class="selection-header">
       <i class="pi pi-briefcase header-icon" style="color: #6366f1;"></i>
       <h2>Welcome Back, {{ currentUser?.name || 'User' }}!</h2>
-      <p class="text-600 mt-2">Here is a summary of your operative workspaces</p>
+      <p class="text-600 mt-2">
+        {{ authService.hasPermission('group:view_all') ? 'Explore all company departments' : 'Access your assigned departments' }}
+      </p>
     </div>
     
     <div class="workspace-grid">

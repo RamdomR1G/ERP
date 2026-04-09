@@ -9,7 +9,7 @@ export interface AppUser {
   email: string;
   password?: string;
   role: string;
-  group: string;
+  group_ids?: string[]; // Arrays de UUIDs para cruzar grupos múltiples
   status: string;
   joined: string;
   joined_date?: string; // from backend
@@ -114,7 +114,7 @@ export class AuthService {
         email: user.email,
         password: user.password,
         role: user.role,
-        group_id: user.group, // Supabase expects group_id
+        group_ids: user.group_ids, // Multiple groups insertion
         status: user.status,
         permissions: user.permissions
     };
@@ -126,7 +126,7 @@ export class AuthService {
         name: updatedUser.name,
         email: updatedUser.email,
         role: updatedUser.role,
-        group_id: updatedUser.group,
+        group_ids: updatedUser.group_ids,
         status: updatedUser.status,
         permissions: updatedUser.permissions
     };

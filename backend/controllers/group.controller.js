@@ -7,12 +7,12 @@ exports.getGroups = async (req, res) => {
         if (error) throw error;
         
         // Manual count to bypass Supabase FK relation errors
-        const { data: users, error: userError } = await supabase.from('users').select('group_id');
+        const { data: users, error: userError } = await supabase.from('users').select('group_ids');
         
         let groupsWithCount = groups;
         if (!userError && users) {
             groupsWithCount = groups.map(g => {
-                const membersCount = users.filter(u => u.group_id === g.id).length;
+                const membersCount = users.filter(u => Array.isArray(u.group_ids) && u.group_ids.includes(g.id)).length;
                 return { ...g, members: membersCount };
             });
         }
