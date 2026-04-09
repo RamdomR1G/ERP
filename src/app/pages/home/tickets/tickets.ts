@@ -36,16 +36,20 @@ export class TicketsComponent implements OnInit {
   
   // ── DROPDOWN OPTIONS ───────────────────────────
   statuses = [
-    { name: 'Open' },
+    { name: 'Pending' },
     { name: 'In Progress' },
-    { name: 'Closed' }
+    { name: 'Review' },
+    { name: 'Done' }
   ];
 
   priorities = [
-    { name: 'Low' },
-    { name: 'Medium' },
-    { name: 'High' },
-    { name: 'Urgent' }
+    { name: 'Lowest' },   
+    { name: 'Very Low' }, 
+    { name: 'Low' },      
+    { name: 'Medium' },   
+    { name: 'High' },     
+    { name: 'Very High' },
+    { name: 'Urgent' }    
   ];
 
   currentUser: any;
@@ -57,6 +61,21 @@ export class TicketsComponent implements OnInit {
   // ── VIEW TICKET ────────────────────────────────
   viewDialogVisible: boolean = false;
   selectedTicket: any = null;
+  newCommentText: string = '';
+
+  get isAdmin(): boolean {
+    return this.currentUser?.role === 'Admin';
+  }
+
+  canEditFull(ticket: any): boolean {
+    if (this.isAdmin) return true;
+    // Non-admins can't edit any fields except status/comments
+    return false;
+  }
+
+  isAssignedToMe(ticket: any): boolean {
+    return ticket && ticket.assigned_to === this.currentUser?.id;
+  }
 
   ngOnInit() {
     this.currentUser = this.authService.getCurrentUser();
@@ -66,13 +85,7 @@ export class TicketsComponent implements OnInit {
   loadData() {
     if (!this.currentUser) return;
 
-    let ticketsReq: Observable<any[]>;
-    if (this.authService.hasPermission('ticket:view')) {
-        ticketsReq = this.ticketService.getAllTickets();
-    } else {
-        ticketsReq = this.ticketService.getUserTickets(this.currentUser.id);
-        this.viewFilter = 'Mine';
-    }
+    const ticketsReq = this.ticketService.getAllTickets();
 
     forkJoin({
       tickets: ticketsReq,
@@ -119,13 +132,65 @@ export class TicketsComponent implements OnInit {
   }
 
   openTicketDetails(ticket: any) {
-      this.selectedTicket = ticket;
+      // Clone to avoid immediate changes in the table
+      this.selectedTicket = { ...ticket };
       // Resolve beautiful group name if possible
       const targetGroup = this.groupsList.find(g => g.id === ticket.group_id);
       if (targetGroup) {
          this.selectedTicket.safeGroupText = targetGroup.name;
       }
       this.viewDialogVisible = true;
+  }
+
+  saveTicketStatus() {
+    if (!this.selectedTicket) return;
+    
+    // If not Admin, we only send status and comments to bypass backend check
+    const updates: any = { 
+        status: this.selectedTicket.status,
+        comments: this.selectedTicket.comments || [],
+        history: this.selectedTicket.history || []
+    };
+
+    if (this.isAdmin) {
+        // Admins can send everything
+        Object.assign(updates, {
+            title: this.selectedTicket.title,
+            description: this.selectedTicket.description,
+            priority: this.selectedTicket.priority,
+            assigned_to: this.selectedTicket.assigned_to
+        });
+    }
+
+    this.ticketService.updateTicket(this.selectedTicket.id, updates).subscribe({
+        next: () => {
+            this.viewDialogVisible = false;
+            this.loadData();
+        },
+        error: (err) => console.error('Error updating ticket:', err)
+    });
+  }
+
+  addComment() {
+    if (!this.newCommentText.trim() || !this.selectedTicket) return;
+    
+    const newComment = {
+        author: this.currentUser.name,
+        date: new Date().toLocaleDateString(),
+        text: this.newCommentText
+    };
+
+    if (!this.selectedTicket.comments) this.selectedTicket.comments = [];
+    this.selectedTicket.comments.push(newComment);
+    
+    // Also log in history
+    if (!this.selectedTicket.history) this.selectedTicket.history = [];
+    this.selectedTicket.history.push({
+        date: new Date().toLocaleDateString(),
+        action: `Comment added by ${this.currentUser.name}`
+    });
+
+    this.newCommentText = '';
   }
 
   updateStats() {
@@ -157,13 +222,25 @@ export class TicketsComponent implements OnInit {
   // ── TICKETS ──────────────────────────────────────
   tickets: any[] = [];
 
-  getTicketSeverity(status: string): 'success' | 'warn' | 'danger' | 'info' {
+  getTicketSeverity(status: string): 'success' | 'warn' | 'danger' | 'info' | 'contrast' {
     switch (status) {
-      case 'Pending': 
-      case 'Open': return 'info';
+      case 'Pending': return 'info';
       case 'In Progress': return 'warn';
-      case 'Done': 
-      case 'Closed': return 'success';
+      case 'Review': return 'contrast';
+      case 'Done': return 'success';
+      default: return 'info';
+    }
+  }
+
+  getPrioritySeverity(priority: string): 'success' | 'warn' | 'danger' | 'info' {
+    switch (priority) {
+      case 'Lowest':
+      case 'Very Low':
+      case 'Low': return 'success';
+      case 'Medium': return 'info';
+      case 'High':
+      case 'Very High': return 'warn';
+      case 'Urgent': return 'danger';
       default: return 'info';
     }
   }

@@ -50,11 +50,23 @@ fastify.post('/', async (request, reply) => {
     return reply.status(201).send({ message: 'Usuario creado exitosamente', id: data.id });
 });
 
-// Get Users
+// Get Users (with isolation)
 fastify.get('/', async (request, reply) => {
-    const { data, error } = await supabase
-        .from('users')
-        .select('id, name, email, role, group_ids, group_permissions, status, joined_date, permissions');
+    const { user_id, role } = request.query;
+    let query = supabase.from('users').select('id, name, email, role, group_ids, group_permissions, status, joined_date, permissions');
+
+    // ISOLATION: Regular users only see themselves and people in their shared groups
+    if (role !== 'Admin' && user_id) {
+        const { data: currentUser } = await supabase.from('users').select('group_ids').eq('id', user_id).single();
+        if (currentUser && Array.isArray(currentUser.group_ids) && currentUser.group_ids.length > 0) {
+             query = query.ov('group_ids', currentUser.group_ids);
+        } else {
+             // If no groups, only see self
+             query = query.eq('id', user_id);
+        }
+    }
+
+    const { data, error } = await query;
     if (error) return reply.status(500).send({ error: error.message });
     return data;
 });

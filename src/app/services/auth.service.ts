@@ -116,7 +116,9 @@ export class AuthService {
   }
 
   getUsers(): Observable<AppUser[]> {
-    return this.http.get<AppUser[]>(this.apiUrl);
+    const user = this.getCurrentUser();
+    const url = `${this.apiUrl}?user_id=${user?.id || ''}&role=${user?.role || ''}`;
+    return this.http.get<AppUser[]>(url);
   }
 
   addUser(user: AppUser): Observable<any> {

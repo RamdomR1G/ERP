@@ -7,13 +7,17 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SER
 
 fastify.register(cors);
 
-// Get Tickets
+// Get Tickets (with isolation)
 fastify.get('/', async (request, reply) => {
-    const { group_id, assigned_to } = request.query;
+    const { group_id, user_id, role } = request.query;
     let query = supabase.from('tickets').select('*, assigned_user:users!assigned_to(name), creator:users!created_by(name)');
     
     if (group_id) query = query.eq('group_id', group_id);
-    if (assigned_to) query = query.eq('assigned_to', assigned_to);
+    
+    // ISOLATION: Regular users only see what they own
+    if (role !== 'Admin' && user_id) {
+        query = query.or(`assigned_to.eq.${user_id},created_by.eq.${user_id}`);
+    }
 
     const { data, error } = await query;
     if (error) return reply.status(500).send({ error: error.message });
@@ -39,17 +43,43 @@ fastify.post('/', async (request, reply) => {
     return reply.status(201).send({ message: 'Created', id: data.id });
 });
 
-// Update Ticket
+// Update Ticket (with ownership and field restriction)
 fastify.put('/:id', async (request, reply) => {
     const { id } = request.params;
-    const { error } = await supabase.from('tickets').update(request.body).eq('id', id);
+    const { user_id, role } = request.query;
+    const updates = request.body;
+
+    // Security Check: If not Admin, must be the owner (assigned_to)
+    if (role !== 'Admin' && user_id) {
+        const { data: ticket } = await supabase.from('tickets').select('assigned_to, created_by').eq('id', id).single();
+        if (ticket && (ticket.assigned_to !== user_id && ticket.created_by !== user_id)) {
+            return reply.status(403).send({ error: 'Solo puedes editar tus propios tickets' });
+        }
+
+        // Field Validation: ONLY status and comments allowed for non-admins
+        const allowedFields = ['status', 'comments', 'history'];
+        const updateKeys = Object.keys(updates);
+        const forbiddenFields = updateKeys.filter(k => !allowedFields.includes(k));
+        
+        if (forbiddenFields.length > 0) {
+            return reply.status(403).send({ error: `No tienes permiso para editar: ${forbiddenFields.join(', ')}` });
+        }
+    }
+
+    const { error } = await supabase.from('tickets').update(updates).eq('id', id);
     if (error) return reply.status(500).send({ error: error.message });
     return { message: 'Updated' };
 });
 
-// Delete Ticket
+// Delete Ticket (Admin only)
 fastify.delete('/:id', async (request, reply) => {
     const { id } = request.params;
+    const { role } = request.query;
+
+    if (role !== 'Admin') {
+        return reply.status(403).send({ error: 'Solo los administradores pueden borrar tickets' });
+    }
+
     const { error } = await supabase.from('tickets').delete().eq('id', id);
     if (error) return reply.status(500).send({ error: error.message });
     return { message: 'Deleted' };

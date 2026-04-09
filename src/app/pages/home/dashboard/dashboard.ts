@@ -55,21 +55,8 @@ export class DashboardComponent implements OnInit {
           this.personalTickets = res.tickets;
           this.personalTickets.sort((a,b) => new Date(b.created_on).getTime() - new Date(a.created_on).getTime());
 
-          // IMPORTANT: Show ONLY the groups the user belongs to.
-          // If the user wants to see their assigned groups specifically:
-          const myGroupIds: string[] = this.currentUser.group_ids || [];
-          
-          if (this.authService.hasPermission('group:view_all')) {
-              // For Admins, we could show all, but the request asks to show groups they belong to.
-              // Let's show all available but maybe highlight "Mine"? 
-              // Actually, the user's phrasing suggests they want to see their associations. 
-              // We'll keep the view_all perms showing all for management, but ensure non-admin only see theirs.
-              this.groupsData = res.groups; 
-              // If they specifically want ONLY their groups even as admin, we would filter.
-              // But usually Admins need to see everything.
-          } else {
-              this.groupsData = res.groups.filter(g => myGroupIds.includes(g.id));
-          }
+          // The groups come pre-filtered from the server according to user isolation rules
+          this.groupsData = res.groups; 
 
           this.calculateStats();
           this.cdr.detectChanges();

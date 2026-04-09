@@ -7,11 +7,25 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SER
 
 fastify.register(cors);
 
-// Get Groups (with members count)
+// Get Groups (with members count and isolation)
 fastify.get('/', async (request, reply) => {
-    const { data: groups, error } = await supabase.from('groups').select('*');
+    const { user_id, role } = request.query;
+    let query = supabase.from('groups').select('*');
+
+    // ISOLATION: If not Admin, filter by user allowed group_ids
+    if (role !== 'Admin' && user_id) {
+        const { data: user } = await supabase.from('users').select('group_ids').eq('id', user_id).single();
+        if (user && Array.isArray(user.group_ids)) {
+            query = query.in('id', user.group_ids);
+        } else {
+            return []; // No groups if no access
+        }
+    }
+
+    const { data: groups, error } = await query;
     if (error) return reply.status(500).send({ error: error.message });
 
+    // Calculate members count for the groups we're returning
     const { data: users, error: userError } = await supabase.from('users').select('group_ids');
     
     if (!userError && users) {
