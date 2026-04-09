@@ -3,11 +3,11 @@ const fastify = require('fastify')({ logger: true });
 const cors = require('@fastify/cors');
 const replyFrom = require('@fastify/reply-from');
 
-// Service URLs (Internal Ports)
+// Service URLs (Configurable via Environment Variables for Docker)
 const SERVICES = {
-    user: 'http://localhost:3001',
-    groups: 'http://localhost:3002',
-    tickets: 'http://localhost:3003'
+    user: process.env.USER_SERVICE_URL || 'http://localhost:3001',
+    groups: process.env.GROUPS_SERVICE_URL || 'http://localhost:3002',
+    tickets: process.env.TICKETS_SERVICE_URL || 'http://localhost:3003'
 };
 
 fastify.register(cors);

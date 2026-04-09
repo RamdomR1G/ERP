@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  # API Gateway
+  api-gateway:
+    build: ./api-gateway
+    container_name: erp-api-gateway
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - USER_SERVICE_URL=http://user-service:3001
+      - GROUPS_SERVICE_URL=http://groups-service:3002
+      - TICKETS_SERVICE_URL=http://tickets-service:3003
+    depends_on:
+      - user-service
+      - groups-service
+      - tickets-service
+    networks:
+      - erp-network
+
+  # User Service
+  user-service:
+    build: ./services/user-service
+    container_name: erp-user-service
+    environment:
+      - PORT=3001
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+    networks:
+      - erp-network
+
+  # Groups Service
+  groups-service:
+    build: ./services/groups-service
+    container_name: erp-groups-service
+    environment:
+      - PORT=3002
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+    networks:
+      - erp-network
+
+  # Tickets Service
+  tickets-service:
+    build: ./services/tickets-service
+    container_name: erp-tickets-service
+    environment:
+      - PORT=3003
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+    networks:
+      - erp-network
+
+networks:
+  erp-network:
+    driver: bridge
