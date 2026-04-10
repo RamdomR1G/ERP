@@ -1,8 +1,10 @@
-require('dotenv').config({ path: '../../.env' });
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 const fastify = require('fastify')({ logger: true });
 const cors = require('@fastify/cors');
 const { createClient } = require('@supabase/supabase-js');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
@@ -23,7 +25,26 @@ fastify.post('/login', async (request, reply) => {
     if (!isMatch) return reply.status(401).send({ error: 'Credenciales inválidas' });
 
     delete user.password_hash;
-    return { message: 'Autenticación exitosa', user };
+
+    // Generar JWT
+    console.log('[UserService] Generando token para:', user.email);
+    const token = jwt.sign(
+        { 
+            id: user.id, 
+            email: user.email, 
+            role: user.role, 
+            group_permissions: user.group_permissions 
+        }, 
+        (process.env.JWT_SECRET || 'fallback_secret_not_recommended').trim(), 
+        { expiresIn: '8h' }
+    );
+    console.log('[UserService] Token generado exitosamente');
+
+    return { 
+        message: 'Autenticación exitosa', 
+        token,
+        user 
+    };
 });
 
 // Create User
@@ -52,7 +73,9 @@ fastify.post('/', async (request, reply) => {
 
 // Get Users (with isolation)
 fastify.get('/', async (request, reply) => {
-    const { user_id, role } = request.query;
+    const user_id = request.headers['x-user-id'];
+    const role = request.headers['x-user-role'];
+    
     let query = supabase.from('users').select('id, name, email, role, group_ids, group_permissions, status, joined_date, permissions');
 
     // ISOLATION: Regular users only see themselves and people in their shared groups

@@ -38,8 +38,9 @@ export class AuthService {
   // ── IDENTIDAD DEL USUARIO ─────────────────────────────────────────────
   private currentUserData: any | null = null;
   
-  // ── PERMISOS DEL USUARIO ──────────────────────────────────────────────
+  // ── PERMISOS Y TOKEN ─────────────────────────────────────────────────
   private currentUserPermissions: string[] = [];
+  private token: string | null = null;
 
   // ── ESTADO DEL GRUPO DE TRABAJO ───────────────────────────────────────
   private availableGroups: UserGroup[] = [];
@@ -57,6 +58,8 @@ export class AuthService {
       this.currentUserData = JSON.parse(savedUser);
       // Re-hidratar el mapa de permisos si existe
       const savedPermsMap = sessionStorage.getItem('mockPermsMap');
+      this.token = sessionStorage.getItem('mockToken');
+
       if (savedPermsMap) {
         try {
           const perms = typeof savedPermsMap === 'string' ? JSON.parse(savedPermsMap) : savedPermsMap;
@@ -73,11 +76,8 @@ export class AuthService {
     if (savedPerms) {
       this.currentUserPermissions = JSON.parse(savedPerms);
     } else {
-      this.currentUserPermissions = [
-        'group:view', 'group:add', 'group:edit', 'group:delete',
-        'users:view', 'user:add', 'user:edit', 'user:delete',
-        'ticket:view', 'ticket:add', 'ticket:edit', 'ticket:delete', 'ticket:edit_state'
-      ];
+      // Ya no damos permisos por defecto; ahora vienen del JWT/Base de datos
+      this.currentUserPermissions = [];
     }
   }
 
@@ -91,8 +91,8 @@ export class AuthService {
     sessionStorage.setItem('mockPermsMap', JSON.stringify(permissionsObject));
   }
 
-  hasPermission(permissionName: string): boolean {
-    return this.permissionService.hasPermission(permissionName);
+  hasPermission(permissionName: string, flexible: boolean = false): boolean {
+    return this.permissionService.hasPermission(permissionName, flexible);
   }
 
   setCurrentUser(user: any) {
@@ -126,7 +126,10 @@ export class AuthService {
     
     return this.http.post(`${this.apiUrl}/login`, { email, password }).pipe(
       tap((response: any) => {
+        console.log('[AuthService] Login Response:', response);
         if (response.user) {
+          this.token = response.token;
+          sessionStorage.setItem('mockToken', response.token || '');
           this.setCurrentUser(response.user);
           this.setPermissions(response.user.group_permissions || {});
         }
@@ -135,9 +138,11 @@ export class AuthService {
   }
 
   getUsers(): Observable<AppUser[]> {
-    const user = this.getCurrentUser();
-    const url = `${this.apiUrl}?user_id=${user?.id || ''}&role=${user?.role || ''}`;
-    return this.http.get<AppUser[]>(url);
+    return this.http.get<AppUser[]>(this.apiUrl);
+  }
+  
+  getToken(): string | null {
+    return this.token;
   }
 
   addUser(user: AppUser): Observable<any> {

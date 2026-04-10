@@ -10,9 +10,7 @@ export class GroupService {
   private apiUrl = 'http://localhost:3000/api/groups';
 
   getGroups(): Observable<UserGroup[]> {
-    const user = this.auth.getCurrentUser() as any;
-    const url = `${this.apiUrl}?user_id=${user?.id || ''}&role=${user?.role || ''}`;
-    return this.http.get<UserGroup[]>(url);
+    return this.http.get<UserGroup[]>(this.apiUrl);
   }
 
   createGroup(group: Partial<UserGroup>): Observable<any> {

@@ -27,18 +27,15 @@ export class TicketService {
   private apiUrl = 'http://localhost:3000/api/tickets';
 
   getAllTickets(): Observable<Ticket[]> {
-    const user = this.auth.getCurrentUser();
-    return this.http.get<Ticket[]>(`${this.apiUrl}?user_id=${user?.id}&role=${user?.role}`);
+    return this.http.get<Ticket[]>(this.apiUrl);
   }
 
   getGroupTickets(groupId: string): Observable<Ticket[]> {
-    const user = this.auth.getCurrentUser();
-    return this.http.get<Ticket[]>(`${this.apiUrl}?group_id=${groupId}&user_id=${user?.id}&role=${user?.role}`);
+    return this.http.get<Ticket[]>(`${this.apiUrl}?group_id=${groupId}`);
   }
 
   getUserTickets(userId: string): Observable<Ticket[]> {
-    const user = this.auth.getCurrentUser();
-    return this.http.get<Ticket[]>(`${this.apiUrl}?assigned_to=${userId}&user_id=${user?.id}&role=${user?.role}`);
+    return this.http.get<Ticket[]>(`${this.apiUrl}?assigned_to=${userId}`);
   }
 
   createTicket(ticket: Omit<Ticket, 'id'|'created_on'>): Observable<any> {
@@ -46,8 +43,7 @@ export class TicketService {
   }
 
   updateTicket(id: string, updates: Partial<Ticket>): Observable<any> {
-    const user = this.auth.getCurrentUser();
-    return this.http.put(`${this.apiUrl}/${id}?user_id=${user?.id}&role=${user?.role}`, updates);
+    return this.http.put(`${this.apiUrl}/${id}`, updates);
   }
 
   deleteTicket(id: string): Observable<any> {

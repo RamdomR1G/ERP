@@ -19,13 +19,7 @@ export class Sidebar implements OnInit {
   constructor(private router: Router) {}
 
   ngOnInit() {
-    this.route.queryParams.subscribe(params => {
-      // ── PERMITIR PROBAR PERMISOS DESDE LA URL (EJ: ?permissions=ticket:view,group:add) ──
-      if (params['permissions']) {
-        const permsArray = params['permissions'].split(',');
-        this.authService.setPermissions(permsArray);
-      }
-    });
+    // La lógica de permisos ahora es manejada exclusivamente por el AuthService y el backend.
   }
 
   menuItems = [
@@ -40,7 +34,7 @@ export class Sidebar implements OnInit {
 
   canShowMenuItem(item: any): boolean {
     if (!item.requiredPermission) return true; // public
-    return this.authService.hasPermission(item.requiredPermission);
+    return this.authService.hasPermission(item.requiredPermission, true);
   }
 
   navigate(route: string) {

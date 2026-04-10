@@ -33,42 +33,36 @@ export class PermissionService {
   /**
    * Verifica si el usuario tiene un permiso específico en el grupo activo
    */
-  hasPermission(permission: string): boolean {
-    // 0. LOG DE INICIO
-    // console.log(`[PermissionService] Verificando permiso: ${permission}`);
+  /**
+   * Verifica permisos. 
+   * @param permission Permiso a buscar.
+   * @param flexible Si es true, busca en todos los grupos (útil para visibilidad de Sidebar).
+   */
+  hasPermission(permission: string, flexible: boolean = false): boolean {
+    // 1. ADMIN / GLOBAL - Siempre verificar permisos globales primero
+    // (Incluye "*" o "admin" cargados en el contexto 'global')
 
-    // 1. Siempre verificar permisos globales primero (independiente del grupo activo)
+    // 2. Permisos globales ( dashboard:view, etc )
     const globalPerms = this.userPermissionsMap.get('global') || [];
-    if (globalPerms.includes(permission) || globalPerms.includes('*') || globalPerms.includes('admin')) {
-        console.log(`[PermissionService] ✅ PERMISO CONCEDIDO por GLOBAL: ${permission}`);
-        return true;
-    }
+    if (globalPerms.includes(permission) || globalPerms.includes('*')) return true;
 
     const currentGroup = this.activeGroupId();
     
-    // 2. Si NO hay grupo seleccionado, buscamos si tiene el permiso en CUALQUIERA de sus grupos
-    if (!currentGroup) {
+    // 3. Búsqueda FLEXIBLE (Para Sidebar)
+    if (flexible) {
         for (const [groupId, perms] of this.userPermissionsMap.entries()) {
             if (perms.includes(permission) || perms.includes('*') || perms.includes('admin')) {
-                console.log(`[PermissionService] ✅ PERMISO CONCEDIDO (Multi-grupo en ${groupId}): ${permission}`);
                 return true;
             }
         }
-        console.warn(`[PermissionService] ❌ PERMISO DENEGADO (Sin grupo activo y no hallado en ningún otro): ${permission}`);
         return false;
     }
 
-    // 3. Si HAY grupo seleccionado, somos estrictos al contexto de ese grupo
-    const groupPerms = this.userPermissionsMap.get(currentGroup) || [];
-    const hasIt = groupPerms.includes(permission) || groupPerms.includes('*') || groupPerms.includes('admin');
-    
-    if (hasIt) {
-        console.log(`[PermissionService] ✅ PERMISO CONCEDIDO en grupo ${currentGroup}: ${permission}`);
-    } else {
-        console.warn(`[PermissionService] ❌ PERMISO DENEGADO en grupo ${currentGroup}: ${permission}`);
-    }
+    // 4. Búsqueda ESTRICTA (Contexto activo necesario para acciones)
+    if (!currentGroup) return false;
 
-    return hasIt;
+    const groupPerms = this.userPermissionsMap.get(currentGroup) || [];
+    return groupPerms.includes(permission) || groupPerms.includes('*') || groupPerms.includes('admin');
   }
 
   /**

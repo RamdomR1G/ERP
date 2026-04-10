@@ -39,7 +39,7 @@ export class DashboardComponent implements OnInit {
       const storedUser = this.authService.getCurrentUser();
       if (!storedUser) return;
 
-      // Fetch fresh user data to ensure group_ids are up to date
+      // Fetch fresh user data to ensure group_permissions and context are up to date
       const userRefreshReq = this.http.get<any>(`http://localhost:3000/api/users/${storedUser.id}`).pipe(catchError(() => of(storedUser)));
       const ticketsReq = this.ticketService.getUserTickets(storedUser.id).pipe(catchError(() => of([])));
       const groupsReq = this.groupService.getGroups().pipe(catchError(() => of([])));

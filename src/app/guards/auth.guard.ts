@@ -15,8 +15,8 @@ export const authGuard: CanActivateFn = (route, state) => {
     return true;
   }
 
-  // Verifica con el servicio si el usuario tiene el permiso
-  if (authService.hasPermission(requiredPermission)) {
+  // Verifica con el servicio si el usuario tiene el permiso (Modo Flexible para Navegación)
+  if (authService.hasPermission(requiredPermission, true)) {
     return true;
   }
 
