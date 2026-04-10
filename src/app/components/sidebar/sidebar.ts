@@ -23,16 +23,20 @@ export class Sidebar implements OnInit {
   }
 
   menuItems = [
-    //{ label: 'Home', icon: 'pi pi-home', route: '/home', requiredPermission: null },
-    { label: 'Dashboard', icon: 'pi pi-home', route: '/home/dashboard', requiredPermission: null },
-    //{ label: 'Products', icon: 'pi pi-box', route: '/home/products', requiredPermission: null },
-    { label: 'Tickets', icon: 'pi pi-ticket', route: '/home/tickets', requiredPermission: 'ticket:view' },
-    { label: 'Users', icon: 'pi pi-user', route: '/home/users', requiredPermission: 'users:view' },
-    { label: 'Groups', icon: 'pi pi-users', route: '/home/groups', requiredPermission: 'group:view' },
-    //{ label: 'Reports', icon: 'pi pi-chart-bar', route: '/home/reports', requiredPermission: null } // assuming public
+    { label: 'Dashboard', icon: 'pi pi-home', route: '/home/dashboard', requiredPermission: null, requiresGroup: false },
+    { label: 'Tickets', icon: 'pi pi-ticket', route: '/home/tickets', requiredPermission: 'ticket:view', requiresGroup: false },
+    { label: 'Users', icon: 'pi pi-user', route: '/home/users', requiredPermission: 'users:view', requiresGroup: false },
+    { label: 'Groups', icon: 'pi pi-users', route: '/home/groups', requiredPermission: 'group:view', requiresGroup: false },
   ];
 
   canShowMenuItem(item: any): boolean {
+    const hasGroup = !!this.authService.getActiveGroup();
+    
+    // Si el ítem requiere un grupo activo y no hay uno, lo ocultamos
+    if (item.requiresGroup && !hasGroup) {
+        return false;
+    }
+
     if (!item.requiredPermission) return true; // public
     return this.authService.hasPermission(item.requiredPermission, true);
   }

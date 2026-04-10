@@ -18,9 +18,27 @@ fastify.get('/', async (request, reply) => {
     
     if (group_id) query = query.eq('group_id', group_id);
     
-    // ISOLATION: Regular users only see what they own
-    if (role !== 'Admin' && user_id) {
-        query = query.or(`assigned_to.eq.${user_id},created_by.eq.${user_id}`);
+    // ISOLATION: 
+    // Admin: Sees everything.
+    // Regular User: Sees tickets in their shared groups OR tickets assigned/created by them.
+    if (role !== 'Admin') {
+        const userGroupsString = request.headers['x-user-groups'] || '[]';
+        let userGroups = [];
+        try {
+            userGroups = JSON.parse(userGroupsString);
+        } catch (e) {
+            console.error('[TicketsService] Error parsing x-user-groups:', e);
+        }
+
+        if (user_id) {
+            if (Array.isArray(userGroups) && userGroups.length > 0) {
+                // Return tickets from user groups OR owned by user
+                query = query.or(`group_id.in.(${userGroups.join(',')}),assigned_to.eq.${user_id},created_by.eq.${user_id}`);
+            } else {
+                // If no groups, ONLY see owned tickets
+                query = query.or(`assigned_to.eq.${user_id},created_by.eq.${user_id}`);
+            }
+        }
     }
 
     const { data, error } = await query;

@@ -107,8 +107,17 @@
 
   <!-- USERS TABLE -->
   <div class="table-wrapper">
-    <div class="tab-header">
-      <span class="tab-subtitle">All registered users</span>
+    <div class="tab-header flex justify-content-between align-items-center">
+      <div class="flex align-items-center gap-3">
+          <span class="tab-subtitle">All registered users</span>
+          <p-select [options]="groups" 
+                   [(ngModel)]="selectedGroupId" 
+                   optionLabel="name" 
+                   optionValue="id" 
+                   placeholder="Filter by Group" 
+                   [showClear]="true"
+                   class="ml-3"></p-select>
+      </div>
       <p-button *appHasPermission="'user:add'" label="New User" icon="pi pi-user-plus" (onClick)="newUser()" />
     </div>
     <p-table [value]="users" [paginator]="true" [rows]="5" [tableStyle]="{'min-width':'60rem'}">

@@ -25,10 +25,10 @@ export const authGuard: CanActivateFn = (route, state) => {
   
   messageService.add({
     severity: 'error',
-    summary: 'Acceso Denegado',
-    detail: 'No tienes los permisos necesarios para entrar a esta sección.',
-    sticky: false,
-    life: 5000
+    summary: 'Contexto Requerido',
+    detail: 'No tienes permisos globales para esta sección. Por favor, selecciona primero un grupo de trabajo en la pestaña "Groups".',
+    sticky: true,
+    life: 10000
   });
 
   // ALERT DE RESPALDO PARA DEPURE (Solo para confirmar ejecución)

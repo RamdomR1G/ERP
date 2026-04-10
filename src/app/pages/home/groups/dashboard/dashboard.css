@@ -23,6 +23,46 @@
   color: #334155;
   font-weight: 700;
 }
+/* FACEPILE */
+.facepile {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    padding: 4px;
+    border-radius: 20px;
+    width: fit-content;
+}
+.facepile:hover {
+    background: rgba(0,0,0,0.05);
+}
+.face-item, .face-more {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-left: -8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.face-item:first-child {
+    margin-left: 0;
+}
+.face-more {
+    background: #e2e8f0;
+    color: #475569;
+}
+.team-label {
+    margin-left: 0.75rem;
+    font-size: 0.8rem;
+    color: #64748b;
+    font-weight: 500;
+}
 
 /* STATS */
 .stats-grid {
@@ -30,6 +70,57 @@
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1.5rem;
   margin-bottom: 2rem;
+}
+
+.stat-card {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+/* Members Dialog Content */
+.members-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.member-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+.member-item:last-child {
+    border-bottom: none;
+}
+
+.member-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+}
+
+.member-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.member-info .name {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.member-info .role {
+    font-size: 0.8rem;
+    color: #64748b;
 }
 .stat-content {
   display: flex;

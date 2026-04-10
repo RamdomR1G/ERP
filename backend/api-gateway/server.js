@@ -118,7 +118,8 @@ function proxyTo(request, reply, serviceUrl, prefix) {
         rewriteRequestHeaders: (req, headers) => ({
             ...headers,
             'x-user-id': request.user?.id || '',
-            'x-user-role': request.user?.role || ''
+            'x-user-role': request.user?.role || '',
+            'x-user-groups': JSON.stringify(request.user?.group_ids || [])
         })
     });
 }

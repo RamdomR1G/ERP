@@ -120,6 +120,9 @@ export class TicketsComponent implements OnInit {
   setFilter(filter: 'All' | 'Group' | 'Mine') {
       if (!this.authService.hasPermission('ticket:view') && filter !== 'Mine') return; 
       this.viewFilter = filter;
+      if (filter !== 'Group') {
+          this.selectedGroup = null;
+      }
       this.applyFilter();
   }
 

@@ -124,11 +124,12 @@
         
         <p-select *ngIf="authService.hasPermission('ticket:view')"
                   [options]="groupsList" 
-                  [(ngModel)]="selectedGroup" 
+                   [(ngModel)]="selectedGroup" 
                   (onChange)="onGroupSelect($event)"
                   optionLabel="name" 
                   optionValue="id" 
                   placeholder="Filter by Group..." 
+                  [showClear]="true"
                   class="mx-2"></p-select>
 
         <p-button label="My Tickets" [severity]="viewFilter === 'Mine' ? 'primary' : 'secondary'" (onClick)="setFilter('Mine')" />

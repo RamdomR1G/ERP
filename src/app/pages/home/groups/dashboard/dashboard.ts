@@ -11,6 +11,7 @@ import { TableModule } from 'primeng/table';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
+import { TooltipModule } from 'primeng/tooltip';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
 import { AuthService, AppUser } from '../../../../services/auth.service';
@@ -21,7 +22,7 @@ import { HasPermissionDirective } from '../../../../directives/has-permission.di
 @Component({
   selector: 'app-group-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonModule, CardModule, TagModule, DialogModule, InputTextModule, SelectModule, DragDropModule, TableModule, SelectButtonModule, IconFieldModule, InputIconModule, HasPermissionDirective],
+  imports: [CommonModule, FormsModule, ButtonModule, CardModule, TagModule, DialogModule, InputTextModule, SelectModule, DragDropModule, TableModule, SelectButtonModule, IconFieldModule, InputIconModule, TooltipModule, HasPermissionDirective],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css'
 })
@@ -44,6 +45,8 @@ export class GroupDashboardComponent implements OnInit {
 
   // System Users for assignments
   systemUsers: AppUser[] = [];
+  groupMembers: AppUser[] = [];
+  membersVisible: boolean = false;
 
   // Modal logic for Add Ticket
   visible: boolean = false;
@@ -98,9 +101,10 @@ export class GroupDashboardComponent implements OnInit {
         this.groupName = group.name;
       });
 
-      // 2. Fetch Users for the Dropdown
+      // 2. Fetch Users for the Dropdown and Group Membership
       this.authService.getUsers().subscribe(users => {
         this.systemUsers = users;
+        this.filterGroupMembers();
       });
 
       // 3. Fetch Tickets
@@ -108,11 +112,42 @@ export class GroupDashboardComponent implements OnInit {
     }
   }
 
+  filterGroupMembers() {
+    if (!this.groupId) return;
+    this.groupMembers = this.systemUsers.filter(u => {
+        const groups = u.group_ids || [];
+        return groups.includes(this.groupId!);
+    });
+  }
+
+  removeMember(member: AppUser) {
+    if (!this.groupId) return;
+    if (!confirm(`¿Estás seguro de que deseas eliminar a ${member.name} de este grupo?`)) return;
+
+    const updatedGroupIds = (member.group_ids || []).filter(id => id !== this.groupId);
+    
+    this.authService.updateUser({
+        ...member,
+        group_ids: updatedGroupIds
+    }).subscribe({
+        next: () => {
+            // Actualizamos localmente
+            member.group_ids = updatedGroupIds;
+            this.filterGroupMembers();
+            this.cdr.detectChanges();
+        },
+        error: (err) => {
+            console.error('Error removing member:', err);
+            alert('No se pudo eliminar al usuario del grupo.');
+        }
+    });
+  }
+
   loadTickets() {
       if(!this.groupId) return;
       this.ticketService.getGroupTickets(this.groupId).subscribe(data => {
           this.tickets = data;
-          this.cdr.detectChanges(); // Forzar actualización visual despues de cargar
+          this.cdr.detectChanges(); 
       });
   }
   

@@ -160,9 +160,15 @@ export class UsersComponent implements OnInit {
 
   newUserPerms: { [key: string]: boolean } = {};
 
+  selectedGroupId: string | null = null;
+
   // ── USERS ──────────────────────────────────────
   get users(): AppUser[] {
-    return this.usersList;
+    if (!this.selectedGroupId) return this.usersList;
+    return this.usersList.filter(u => {
+        const ids = u.group_ids || [];
+        return ids.includes(this.selectedGroupId!);
+    });
   }
 
   getUserSeverity(status: string): 'success' | 'danger' {

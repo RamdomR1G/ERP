@@ -4,7 +4,21 @@
   <div class="header-actions">
     <div class="title-section">
       <p-button icon="pi pi-arrow-left" [outlined]="true" severity="secondary" (onClick)="goBack()"></p-button>
-      <h2>{{ groupName }} Dashboard</h2>
+      <div>
+          <h2 style="margin-bottom: 0.25rem;">{{ groupName }} Dashboard</h2>
+          <!-- FACEPILE (Compact Members) -->
+          <div class="facepile" (click)="membersVisible = true">
+              @for (member of groupMembers.slice(0, 4); track member.id) {
+                  <div class="face-item" [style.background]="member.role === 'Admin' ? '#6366f1' : '#94a3b8'" [pTooltip]="member.name">
+                      {{ member.name.charAt(0) }}
+                  </div>
+              }
+              @if (groupMembers.length > 4) {
+                  <div class="face-more">+{{ groupMembers.length - 4 }}</div>
+              }
+              <span class="team-label">Team Members</span>
+          </div>
+      </div>
     </div>
     <div style="display: flex; gap: 1rem;">
       <p-selectButton [options]="viewOptions" [(ngModel)]="viewMode" optionValue="value" optionLabel="value">
@@ -75,6 +89,28 @@
       </div>
     </p-card>
   </div>
+
+  <!-- FULL MEMBERS DIALOG -->
+  <p-dialog header="Team Members" [(visible)]="membersVisible" [modal]="true" [style]="{ width: '25rem' }">
+    <div class="members-list">
+        @for (member of groupMembers; track member.id) {
+            <div class="member-item">
+                <div class="member-avatar" [style.background]="member.role === 'Admin' ? '#6366f1' : '#94a3b8'">
+                    {{ member.name.charAt(0) }}
+                </div>
+                <div class="member-info">
+                    <span class="name">{{ member.name }}</span>
+                    <span class="role">{{ member.role }}</span>
+                </div>
+                @if (member.id === currentUserId) {
+                    <p-tag value="YOU" severity="info"></p-tag>
+                } @else {
+                    <p-button *appHasPermission="'group:edit'" icon="pi pi-user-minus" [rounded]="true" [text]="true" severity="danger" pTooltip="Remove from group" (onClick)="removeMember(member)"></p-button>
+                }
+            </div>
+        }
+    </div>
+  </p-dialog>
 
   <!-- QUICK FILTERS -->
   <div class="quick-filters-row" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
