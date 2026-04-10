@@ -15,9 +15,11 @@ export class PermissionService {
    */
   setPermissions(permissionsMap: { [key: string]: string[] }) {
     this.userPermissionsMap.clear();
-    Object.keys(permissionsMap).forEach(groupId => {
+    const keys = Object.keys(permissionsMap || {});
+    keys.forEach(groupId => {
       this.userPermissionsMap.set(groupId, permissionsMap[groupId]);
     });
+    console.log(`[PermissionService] Permisos cargados para ${keys.length} contextos.`);
   }
 
   /**
@@ -32,21 +34,41 @@ export class PermissionService {
    * Verifica si el usuario tiene un permiso específico en el grupo activo
    */
   hasPermission(permission: string): boolean {
+    // 0. LOG DE INICIO
+    // console.log(`[PermissionService] Verificando permiso: ${permission}`);
+
     // 1. Siempre verificar permisos globales primero (independiente del grupo activo)
     const globalPerms = this.userPermissionsMap.get('global') || [];
     if (globalPerms.includes(permission) || globalPerms.includes('*') || globalPerms.includes('admin')) {
+        console.log(`[PermissionService] ✅ PERMISO CONCEDIDO por GLOBAL: ${permission}`);
         return true;
     }
 
     const currentGroup = this.activeGroupId();
     
-    // Si no hay grupo seleccionado y no es un permiso global, denegamos
-    if (!currentGroup) return false;
+    // 2. Si NO hay grupo seleccionado, buscamos si tiene el permiso en CUALQUIERA de sus grupos
+    if (!currentGroup) {
+        for (const [groupId, perms] of this.userPermissionsMap.entries()) {
+            if (perms.includes(permission) || perms.includes('*') || perms.includes('admin')) {
+                console.log(`[PermissionService] ✅ PERMISO CONCEDIDO (Multi-grupo en ${groupId}): ${permission}`);
+                return true;
+            }
+        }
+        console.warn(`[PermissionService] ❌ PERMISO DENEGADO (Sin grupo activo y no hallado en ningún otro): ${permission}`);
+        return false;
+    }
 
+    // 3. Si HAY grupo seleccionado, somos estrictos al contexto de ese grupo
     const groupPerms = this.userPermissionsMap.get(currentGroup) || [];
+    const hasIt = groupPerms.includes(permission) || groupPerms.includes('*') || groupPerms.includes('admin');
     
-    // Soporte para comodín por grupo
-    return groupPerms.includes(permission) || groupPerms.includes('*') || groupPerms.includes('admin');
+    if (hasIt) {
+        console.log(`[PermissionService] ✅ PERMISO CONCEDIDO en grupo ${currentGroup}: ${permission}`);
+    } else {
+        console.warn(`[PermissionService] ❌ PERMISO DENEGADO en grupo ${currentGroup}: ${permission}`);
+    }
+
+    return hasIt;
   }
 
   /**

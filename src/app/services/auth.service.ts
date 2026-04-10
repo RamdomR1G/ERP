@@ -58,10 +58,16 @@ export class AuthService {
       // Re-hidratar el mapa de permisos si existe
       const savedPermsMap = sessionStorage.getItem('mockPermsMap');
       if (savedPermsMap) {
-        this.permissionService.setPermissions(JSON.parse(savedPermsMap));
+        try {
+          const perms = typeof savedPermsMap === 'string' ? JSON.parse(savedPermsMap) : savedPermsMap;
+          this.permissionService.setPermissions(perms);
+        } catch (e) {
+          console.error('[AuthService] Error re-hydrating perms:', e);
+        }
       }
     } else {
-      this.currentUserData = { id: '0000', email: 'admin@admin.com', name: 'Admin' };
+      // Default fallback for development/first time
+      this.currentUserData = { id: '0000', email: 'admin@admin.com', name: 'Admin', role: 'Admin' };
     }
 
     if (savedPerms) {
@@ -92,8 +98,18 @@ export class AuthService {
   setCurrentUser(user: any) {
     this.currentUserData = user;
     sessionStorage.setItem('mockUser', JSON.stringify(user));
+    
     if (user.group_permissions) {
-      this.setPermissions(user.group_permissions);
+      let perms = user.group_permissions;
+      if (typeof perms === 'string') {
+        try {
+          perms = JSON.parse(perms);
+        } catch (e) {
+          console.error('[AuthService] Error parsing group_permissions string:', e);
+          perms = {};
+        }
+      }
+      this.setPermissions(perms);
     }
   }
 
@@ -105,6 +121,9 @@ export class AuthService {
    * 2. GESTION DE USUARIOS
    */
   login(email: string, password: string): Observable<any> {
+    // Limpieza agresiva de sesión previa al intentar un nuevo login
+    sessionStorage.clear();
+    
     return this.http.post(`${this.apiUrl}/login`, { email, password }).pipe(
       tap((response: any) => {
         if (response.user) {
