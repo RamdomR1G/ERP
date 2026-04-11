@@ -12,6 +12,7 @@ import { SelectButtonModule } from 'primeng/selectbutton';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { TooltipModule } from 'primeng/tooltip';
+import { ChartModule } from 'primeng/chart';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
 import { AuthService, AppUser } from '../../../../services/auth.service';
@@ -22,7 +23,7 @@ import { HasPermissionDirective } from '../../../../directives/has-permission.di
 @Component({
   selector: 'app-group-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonModule, CardModule, TagModule, DialogModule, InputTextModule, SelectModule, DragDropModule, TableModule, SelectButtonModule, IconFieldModule, InputIconModule, TooltipModule, HasPermissionDirective],
+  imports: [CommonModule, FormsModule, ButtonModule, CardModule, TagModule, DialogModule, InputTextModule, SelectModule, DragDropModule, TableModule, SelectButtonModule, IconFieldModule, InputIconModule, TooltipModule, HasPermissionDirective, ChartModule],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css'
 })
@@ -87,6 +88,12 @@ export class GroupDashboardComponent implements OnInit {
   filters = ['All', 'My Tickets', 'Unassigned', 'High Priority'];
 
   tickets: Ticket[] = [];
+
+  // ── CHARTS ──────────────────────────────────────
+  statusChartData: any;
+  statusChartOptions: any;
+  priorityChartData: any;
+  priorityChartOptions: any;
   
   // Edited Ticket logic
   editingTicketId: string | null = null;
@@ -96,20 +103,48 @@ export class GroupDashboardComponent implements OnInit {
   ngOnInit() {
     this.groupId = this.route.snapshot.paramMap.get('id');
     if (this.groupId) {
+      this.initCharts();
       // 1. Fetch Group Info
       this.groupService.getGroupById(this.groupId).subscribe(group => {
         this.groupName = group.name;
+        this.cdr.detectChanges();
       });
 
       // 2. Fetch Users for the Dropdown and Group Membership
       this.authService.getUsers().subscribe(users => {
         this.systemUsers = users;
         this.filterGroupMembers();
+        this.cdr.detectChanges();
       });
 
       // 3. Fetch Tickets
       this.loadTickets();
     }
+  }
+
+  initCharts() {
+    const documentStyle = getComputedStyle(document.documentElement);
+    const textColor = documentStyle.getPropertyValue('--text-color');
+
+    this.statusChartOptions = {
+        plugins: {
+            legend: { labels: { usePointStyle: true, color: textColor } }
+        },
+        responsive: true,
+        maintainAspectRatio: false
+    };
+
+    this.priorityChartOptions = {
+        maintainAspectRatio: false,
+        aspectRatio: 0.8,
+        plugins: {
+            legend: { labels: { color: textColor } }
+        },
+        scales: {
+            x: { grid: { color: 'rgba(255,255,255,0.1)', drawBorder: false }, ticks: { color: textColor } },
+            y: { grid: { color: 'rgba(255,255,255,0.1)', drawBorder: false }, ticks: { color: textColor } }
+        }
+    };
   }
 
   filterGroupMembers() {
@@ -147,8 +182,39 @@ export class GroupDashboardComponent implements OnInit {
       if(!this.groupId) return;
       this.ticketService.getGroupTickets(this.groupId).subscribe(data => {
           this.tickets = data;
+          this.updateCharts();
           this.cdr.detectChanges(); 
       });
+  }
+
+  updateCharts() {
+    const statuses = ['Pending', 'In Progress', 'Review', 'Done'];
+    const statusCounts = statuses.map(s => this.tickets.filter(t => t.status === s).length);
+
+    this.statusChartData = {
+        labels: statuses,
+        datasets: [{
+            data: statusCounts,
+            backgroundColor: ['#f97316', '#3b82f6', '#a855f7', '#22c55e']
+        }]
+    };
+
+    const priorities = ['High', 'Medium', 'Low'];
+    const priorityCounts = priorities.map(p => this.tickets.filter(t => ['High', 'Very High', 'Urgent'].includes(t.priority) && p === 'High' || t.priority === p).length);
+    // Simplified priority mapping for the chart
+    const highCount = this.tickets.filter(t => ['High', 'Very High', 'Urgent'].includes(t.priority)).length;
+    const medCount = this.tickets.filter(t => t.priority === 'Medium').length;
+    const lowCount = this.tickets.filter(t => ['Low', 'Very Low', 'Lowest'].includes(t.priority)).length;
+
+    this.priorityChartData = {
+        labels: ['High', 'Medium', 'Low'],
+        datasets: [{
+            label: 'Tickets',
+            data: [highCount, medCount, lowCount],
+            backgroundColor: ['#ef4444', '#f97316', '#3b82f6'],
+            borderRadius: 6
+        }]
+    };
   }
   
   getFilteredTickets(baseList: Ticket[]) {

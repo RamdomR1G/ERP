@@ -8,6 +8,7 @@ import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { TooltipModule } from 'primeng/tooltip';
+import { ChartModule } from 'primeng/chart';
 import { Router } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -16,7 +17,7 @@ import { HttpClient } from '@angular/common/http';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [TableModule, TagModule, CommonModule, ButtonModule, CardModule, TooltipModule],
+  imports: [TableModule, TagModule, CommonModule, ButtonModule, CardModule, TooltipModule, ChartModule],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css'
 })
@@ -25,6 +26,12 @@ export class DashboardComponent implements OnInit {
   groupsData: UserGroup[] = [];
   personalTickets: any[] = [];
   stats: any[] = [];
+
+  // ── CHARTS ──────────────────────────────────────
+  statusChartData: any;
+  statusChartOptions: any;
+  priorityChartData: any;
+  priorityChartOptions: any;
 
   constructor(
     public authService: AuthService, 
@@ -59,8 +66,42 @@ export class DashboardComponent implements OnInit {
           this.groupsData = res.groups; 
 
           this.calculateStats();
+          this.initCharts();
           this.cdr.detectChanges();
       });
+  }
+
+  initCharts() {
+      const documentStyle = getComputedStyle(document.documentElement);
+      const textColor = documentStyle.getPropertyValue('--text-color');
+
+      // Status Chart Options
+      this.statusChartOptions = {
+          plugins: {
+              legend: { labels: { usePointStyle: true, color: textColor } }
+          },
+          responsive: true,
+          maintainAspectRatio: false
+      };
+
+      // Priority Chart Options
+      this.priorityChartOptions = {
+          maintainAspectRatio: false,
+          aspectRatio: 0.8,
+          plugins: {
+              legend: { labels: { color: textColor } }
+          },
+          scales: {
+              x: {
+                  grid: { color: 'rgba(255,255,255,0.1)', drawBorder: false },
+                  ticks: { color: textColor }
+              },
+              y: {
+                  grid: { color: 'rgba(255,255,255,0.1)', drawBorder: false },
+                  ticks: { color: textColor }
+              }
+          }
+      };
   }
 
   calculateStats() {
@@ -73,6 +114,32 @@ export class DashboardComponent implements OnInit {
         { label: 'Pending', value: pendingCnt, icon: 'pi pi-clock', color: '#f97316' },
         { label: 'In Progress', value: inProgCnt, icon: 'pi pi-spinner', color: '#22c55e' },
       ];
+
+      // Prepare Chart Data
+      const statuses = ['Pending', 'In Progress', 'Done', 'Review', 'Closed'];
+      const statusCounts = statuses.map(s => this.personalTickets.filter(t => t.status === s).length);
+
+      this.statusChartData = {
+          labels: statuses,
+          datasets: [{
+              data: statusCounts,
+              backgroundColor: ['#f97316', '#3b82f6', '#22c55e', '#a855f7', '#64748b'],
+              hoverBackgroundColor: ['#fb923c', '#60a5fa', '#4ade80', '#c084fc', '#94a3b8']
+          }]
+      };
+
+      const priorities = ['High', 'Medium', 'Low'];
+      const priorityCounts = priorities.map(p => this.personalTickets.filter(t => t.priority === p).length);
+
+      this.priorityChartData = {
+          labels: priorities,
+          datasets: [{
+              label: 'Tickets by Priority',
+              data: priorityCounts,
+              backgroundColor: ['#ef4444', '#f97316', '#3b82f6'],
+              borderRadius: 8
+          }]
+      };
   }
 
   getSeverity(status: string): 'success' | 'warn' | 'info' | 'danger' | 'secondary' {

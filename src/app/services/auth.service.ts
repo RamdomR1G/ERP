@@ -33,6 +33,7 @@ export interface UserGroup {
 export class AuthService {
   private http = inject(HttpClient);
   private readonly apiUrl = 'http://localhost:3000/api/users';
+  private readonly authUrl = 'http://localhost:3000/api/auth';
   private permissionService = inject(PermissionService);
 
   // ── IDENTIDAD DEL USUARIO ─────────────────────────────────────────────
@@ -46,38 +47,49 @@ export class AuthService {
   private availableGroups: UserGroup[] = [];
   private activeGroup: UserGroup | null = null;
 
+  // ── COOKIE HELPERS ─────────────────────────────
+  private setCookie(name: string, value: string, days: number = 1) {
+    let expires = "";
+    if (days) {
+      const date = new Date();
+      date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+      expires = "; expires=" + date.toUTCString();
+    }
+    document.cookie = name + "=" + (value || "") + expires + "; path=/; SameSite=Strict";
+  }
+
+  private getCookie(name: string) {
+    const nameEQ = name + "=";
+    const ca = document.cookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+      if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+    }
+    return null;
+  }
+
+  private eraseCookie(name: string) {
+    document.cookie = name + '=; Max-Age=-99999999; path=/;';
+  }
+
   constructor() {
     this.loadSession();
   }
 
   private loadSession() {
+    this.token = this.getCookie('auth_token');
     const savedUser = sessionStorage.getItem('mockUser');
-    const savedPerms = sessionStorage.getItem('mockPerms');
 
     if (savedUser) {
       this.currentUserData = JSON.parse(savedUser);
-      // Re-hidratar el mapa de permisos si existe
-      const savedPermsMap = sessionStorage.getItem('mockPermsMap');
-      this.token = sessionStorage.getItem('mockToken');
-
-      if (savedPermsMap) {
-        try {
-          const perms = typeof savedPermsMap === 'string' ? JSON.parse(savedPermsMap) : savedPermsMap;
-          this.permissionService.setPermissions(perms);
-        } catch (e) {
-          console.error('[AuthService] Error re-hydrating perms:', e);
-        }
+      // Re-hidratar permisos desde el servicio dedicado
+      if (this.currentUserData.group_permissions) {
+          this.permissionService.setPermissions(this.currentUserData.group_permissions);
       }
     } else {
-      // Default fallback for development/first time
+      // Default fallback for development
       this.currentUserData = { id: '0000', email: 'admin@admin.com', name: 'Admin', role: 'Admin' };
-    }
-
-    if (savedPerms) {
-      this.currentUserPermissions = JSON.parse(savedPerms);
-    } else {
-      // Ya no damos permisos por defecto; ahora vienen del JWT/Base de datos
-      this.currentUserPermissions = [];
     }
   }
 
@@ -122,14 +134,15 @@ export class AuthService {
    */
   login(email: string, password: string): Observable<any> {
     // Limpieza agresiva de sesión previa al intentar un nuevo login
+    this.eraseCookie('auth_token');
     sessionStorage.clear();
     
-    return this.http.post(`${this.apiUrl}/login`, { email, password }).pipe(
+    return this.http.post(`${this.authUrl}/login`, { email, password }).pipe(
       tap((response: any) => {
         console.log('[AuthService] Login Response:', response);
         if (response.user) {
           this.token = response.token;
-          sessionStorage.setItem('mockToken', response.token || '');
+          this.setCookie('auth_token', response.token || '', 1);
           this.setCurrentUser(response.user);
           this.setPermissions(response.user.group_permissions || {});
         }
@@ -137,12 +150,24 @@ export class AuthService {
     );
   }
 
+  register(name: string, email: string, password: string): Observable<any> {
+    return this.http.post(`${this.authUrl}/register`, { name, email, password });
+  }
+
   getUsers(): Observable<AppUser[]> {
     return this.http.get<AppUser[]>(this.apiUrl);
   }
   
   getToken(): string | null {
-    return this.token;
+    return this.getCookie('auth_token');
+  }
+
+  logout() {
+    this.eraseCookie('auth_token');
+    this.token = null;
+    sessionStorage.clear();
+    this.currentUserData = null;
+    this.permissionService.clearPermissions();
   }
 
   addUser(user: AppUser): Observable<any> {

@@ -90,6 +90,28 @@
     </p-card>
   </div>
 
+  <!-- GROUP INSIGHTS (CHARTS) -->
+  <div class="charts-row mb-4">
+    <div class="grid">
+      <div class="col-12 md:col-6 lg:col-4">
+        <p-card styleClass="chart-container-card h-full">
+            <h4 class="m-0 mb-3 text-700">Ticket Status</h4>
+            <div style="height: 200px;">
+                <p-chart type="doughnut" [data]="statusChartData" [options]="statusChartOptions" height="100%" />
+            </div>
+        </p-card>
+      </div>
+      <div class="col-12 md:col-6 lg:col-8">
+        <p-card styleClass="chart-container-card h-full">
+            <h4 class="m-0 mb-3 text-700">Priority Distribution</h4>
+            <div style="height: 200px;">
+                <p-chart type="bar" [data]="priorityChartData" [options]="priorityChartOptions" height="100%" />
+            </div>
+        </p-card>
+      </div>
+    </div>
+  </div>
+
   <!-- FULL MEMBERS DIALOG -->
   <p-dialog header="Team Members" [(visible)]="membersVisible" [modal]="true" [style]="{ width: '25rem' }">
     <div class="members-list">

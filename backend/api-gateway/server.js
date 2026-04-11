@@ -35,7 +35,7 @@ const PERMISSION_MAP = [
 
 fastify.addHook('onRequest', async (request, reply) => {
     // 1. Exclude public routes
-    const publicRoutes = ['/api/users/login', '/api/users/register', '/health', '/favicon.ico'];
+    const publicRoutes = ['/api/users/login', '/api/users/register', '/api/auth/login', '/api/auth/register', '/health', '/favicon.ico'];
     if (publicRoutes.some(route => request.url.startsWith(route))) return;
 
     // 2. Validate JWT
@@ -115,6 +115,10 @@ fastify.addHook('onRequest', async (request, reply) => {
 fastify.all('/api/users', (request, reply) => proxyTo(request, reply, SERVICES.user, '/api/users'));
 fastify.all('/api/users/*', (request, reply) => proxyTo(request, reply, SERVICES.user, '/api/users'));
 
+// Auth Aliases (mapping to user service)
+fastify.all('/api/auth/login', (request, reply) => proxyTo(request, reply, SERVICES.user, '/api/auth/login', '/login'));
+fastify.all('/api/auth/register', (request, reply) => proxyTo(request, reply, SERVICES.user, '/api/auth/register', '/register'));
+
 // Groups Service
 fastify.all('/api/groups', (request, reply) => proxyTo(request, reply, SERVICES.groups, '/api/groups'));
 fastify.all('/api/groups/*', (request, reply) => proxyTo(request, reply, SERVICES.groups, '/api/groups'));
@@ -124,8 +128,8 @@ fastify.all('/api/tickets', (request, reply) => proxyTo(request, reply, SERVICES
 fastify.all('/api/tickets/*', (request, reply) => proxyTo(request, reply, SERVICES.tickets, '/api/tickets'));
 
 // Helper for proxying
-function proxyTo(request, reply, serviceUrl, prefix) {
-    const destPath = request.url.replace(prefix, '') || '/';
+function proxyTo(request, reply, serviceUrl, prefix, overridePath = null) {
+    const destPath = overridePath || (request.url.replace(prefix, '') || '/');
     return reply.from(`${serviceUrl}${destPath}`, {
         rewriteRequestHeaders: (req, headers) => ({
             ...headers,

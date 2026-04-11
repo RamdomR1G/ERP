@@ -23,6 +23,15 @@ export class PermissionService {
   }
 
   /**
+   * Limpia todos los permisos y el contexto actual
+   */
+  clearPermissions() {
+    this.userPermissionsMap.clear();
+    this.activeGroupId.set(null);
+    console.log('[PermissionService] Permisos y contexto limpiados.');
+  }
+
+  /**
    * Cambia el contexto de permisos al grupo especificado
    */
   refreshPermissionsForGroup(groupId: string): void {

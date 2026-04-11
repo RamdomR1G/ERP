@@ -470,3 +470,35 @@ h4 {
 .cursor-pointer {
   cursor: pointer;
 }
+
+/* ── CHARTS & GRID ── */
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  margin-right: -0.5rem;
+  margin-left: -0.5rem;
+  margin-top: -0.5rem;
+}
+
+.col-12 { width: 100%; padding: 0.5rem; }
+
+@media screen and (min-width: 768px) {
+  .md\:col-6 { width: 50%; padding: 0.5rem; }
+}
+
+@media screen and (min-width: 992px) {
+    .lg\:col-4 { width: 33.3333%; padding: 0.5rem; }
+    .lg\:col-8 { width: 66.6666%; padding: 0.5rem; }
+}
+
+.chart-container-card {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #f1f5f9;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+::ng-deep .chart-container-card .p-card-body {
+    padding: 1.5rem;
+}
+

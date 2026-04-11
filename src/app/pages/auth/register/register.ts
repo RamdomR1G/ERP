@@ -36,19 +36,7 @@ export class RegisterComponent {
         return;
     }
 
-    const payload: AppUser = {
-      id: '',
-      name: this.name,
-      email: this.email,
-      password: this.password,
-      role: 'User',
-      group_ids: [],
-      status: 'Active',
-      joined: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-      permissions: ['ticket:view'] // Basic permission for new self-registered users
-    };
-
-    this.authService.addUser(payload).subscribe({
+    this.authService.register(this.name, this.email, this.password).subscribe({
       next: () => {
          this.messageService.add({severity: 'success', summary: 'Welcome!', detail: 'Account created successfully! Redirecting...'});
          setTimeout(() => {

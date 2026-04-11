@@ -51,6 +51,25 @@
       </div>
     </section>
 
+    <!-- DATA VISUALIZATIONS -->
+    <section class="section mt-5">
+      <h3 class="section-title">Insights</h3>
+      <div class="grid">
+        <div class="col-12 md:col-6 lg:col-4">
+          <div class="chart-card p-4 shadow-1 border-round-xl bg-white h-full">
+            <h4 class="m-0 mb-3 text-700 font-semibold">Status Distribution</h4>
+            <p-chart type="doughnut" [data]="statusChartData" [options]="statusChartOptions" height="250px" />
+          </div>
+        </div>
+        <div class="col-12 md:col-6 lg:col-8">
+          <div class="chart-card p-4 shadow-1 border-round-xl bg-white h-full">
+            <h4 class="m-0 mb-3 text-700 font-semibold">Priority Overview</h4>
+            <p-chart type="bar" [data]="priorityChartData" [options]="priorityChartOptions" height="250px" />
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- TABLE: MY ASSIGNED TICKETS -->
     <section class="section mt-5">
       <h3 class="section-title mb-3">My Active Assignments</h3>
