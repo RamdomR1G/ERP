@@ -47,6 +47,39 @@ fastify.post('/login', async (request, reply) => {
     };
 });
 
+// Register (Public)
+fastify.post('/register', async (request, reply) => {
+    const { name, email, password } = request.body;
+    
+    if (!name || !email || !password) {
+        return reply.status(400).send({ error: 'Todos los campos son obligatorios' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const password_hash = await bcrypt.hash(password, salt);
+
+    const { data, error } = await supabase
+        .from('users')
+        .insert([{
+            name,
+            email,
+            password_hash,
+            role: 'User', // Rol por defecto
+            group_ids: [],
+            group_permissions: {},
+            status: 'Active'
+        }])
+        .select('id')
+        .single();
+
+    if (error) {
+        if (error.code === '23505') return reply.status(400).send({ error: 'El email ya está registrado' });
+        return reply.status(500).send({ error: error.message });
+    }
+
+    return reply.status(201).send({ message: 'Usuario registrado exitosamente', id: data.id });
+});
+
 // Create User
 fastify.post('/', async (request, reply) => {
     const payload = request.body;

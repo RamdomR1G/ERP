@@ -18,11 +18,12 @@ fastify.register(replyFrom);
 
 // --- SECURITY MIDDLEWARE ---
 const PERMISSION_MAP = [
-    { method: 'POST',  path: '/api/tickets',    perm: 'ticket:add' },
-    { method: 'GET',   path: '/api/tickets',    perm: 'ticket:view' }, // Added
-    { method: 'PUT',   path: '/api/tickets/*',  perm: 'ticket:edit' },
-    { method: 'PATCH', path: '/api/tickets/*',  perm: 'ticket:move' },
-    { method: 'DELETE',path: '/api/tickets/*',  perm: 'ticket:delete' },
+    { method: 'POST',  path: '/api/tickets',           perm: 'ticket:add' },
+    { method: 'GET',   path: '/api/tickets',           perm: 'ticket:view' }, 
+    { method: 'PUT',   path: '/api/tickets/*',         perm: 'ticket:edit' },
+    { method: 'PATCH', path: '/api/tickets/*/status',  perm: 'ticket:move' },
+    { method: 'PATCH', path: '/api/tickets/*',         perm: 'ticket:edit' },
+    { method: 'DELETE',path: '/api/tickets/*',         perm: 'ticket:delete' },
     { method: 'GET',   path: '/api/users/*',    perm: 'users:view' },
     { method: 'POST',  path: '/api/users',      perm: 'user:add' },
     { method: 'PUT',   path: '/api/users/*',    perm: 'user:edit' },
@@ -34,7 +35,7 @@ const PERMISSION_MAP = [
 
 fastify.addHook('onRequest', async (request, reply) => {
     // 1. Exclude public routes
-    const publicRoutes = ['/api/users/login', '/api/users/register', '/health'];
+    const publicRoutes = ['/api/users/login', '/api/users/register', '/health', '/favicon.ico'];
     if (publicRoutes.some(route => request.url.startsWith(route))) return;
 
     // 2. Validate JWT
