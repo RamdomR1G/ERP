@@ -18,59 +18,60 @@ fastify.get('/', async (request, reply) => {
         if (user && Array.isArray(user.group_ids)) {
             query = query.in('id', user.group_ids);
         } else {
-            return []; // No groups if no access
+            return { statusCode: 200, intOpCode: 'SxGR200', data: [] }; 
         }
     }
 
     const { data: groups, error } = await query;
-    if (error) return reply.status(500).send({ error: error.message });
+    if (error) return reply.status(500).send({ statusCode: 500, intOpCode: 'SxGR500', data: null, error: error.message });
 
     // Calculate members count for the groups we're returning
     const { data: users, error: userError } = await supabase.from('users').select('group_ids');
     
     if (!userError && users) {
-        return groups.map(g => {
+        const result = groups.map(g => {
             const membersCount = users.filter(u => Array.isArray(u.group_ids) && u.group_ids.includes(g.id)).length;
             return { ...g, members: membersCount };
         });
+        return { statusCode: 200, intOpCode: 'SxGR200', data: result };
     }
-    return groups;
+    return { statusCode: 200, intOpCode: 'SxGR200', data: groups };
 });
 
 // Get Group by ID
 fastify.get('/:id', async (request, reply) => {
     const { id } = request.params;
     const { data, error } = await supabase.from('groups').select('*').eq('id', id).single();
-    if (error) return reply.status(404).send({ error: 'Group not found' });
-    return data;
+    if (error) return reply.status(404).send({ statusCode: 404, intOpCode: 'SxGR404', data: null, error: 'Group not found' });
+    return { statusCode: 200, intOpCode: 'SxGR200', data };
 });
 
 // Create Group
 fastify.post('/', async (request, reply) => {
     const { data, error } = await supabase.from('groups').insert([request.body]).select('id').single();
-    if (error) return reply.status(500).send({ error: error.message });
-    return { message: 'Created', id: data.id };
+    if (error) return reply.status(500).send({ statusCode: 500, intOpCode: 'SxGR500', data: null, error: error.message });
+    return reply.status(201).send({ statusCode: 201, intOpCode: 'SxGR201', data: { message: 'Created', id: data.id } });
 });
 
 // Update Group
 fastify.put('/:id', async (request, reply) => {
     const { id } = request.params;
-    const { data, error } = await supabase.from('groups').update(request.body).eq('id', id).select('id');
-    if (error) return reply.status(500).send({ error: error.message });
-    return { message: 'Updated' };
+    const { error } = await supabase.from('groups').update(request.body).eq('id', id);
+    if (error) return reply.status(500).send({ statusCode: 500, intOpCode: 'SxGR500', data: null, error: error.message });
+    return { statusCode: 200, intOpCode: 'SxGR200', data: { message: 'Updated' } };
 });
 
 // Delete Group
 fastify.delete('/:id', async (request, reply) => {
     const { id } = request.params;
-    return { message: 'Deleted' };
+    return { statusCode: 200, intOpCode: 'SxGR200', data: { message: 'Deleted' } };
 });
 
 // Permissions logic (Migrated here)
 fastify.get('/permissions', async (request, reply) => {
     const { data, error } = await supabase.from('permissions').select('*').order('category', { ascending: true });
-    if (error) return reply.status(500).send({ error: error.message });
-    return data;
+    if (error) return reply.status(500).send({ statusCode: 500, intOpCode: 'SxGR500', data: null, error: error.message });
+    return { statusCode: 200, intOpCode: 'SxGR200', data };
 });
 
 const start = async () => {

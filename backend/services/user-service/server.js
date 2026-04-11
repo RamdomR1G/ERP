@@ -41,9 +41,13 @@ fastify.post('/login', async (request, reply) => {
     console.log('[UserService] Token generado exitosamente');
 
     return { 
-        message: 'Autenticación exitosa', 
-        token,
-        user 
+        statusCode: 200, 
+        intOpCode: 'SxUS200',
+        data: { 
+            message: 'Autenticación exitosa', 
+            token,
+            user 
+        }
     };
 });
 
@@ -52,7 +56,7 @@ fastify.post('/register', async (request, reply) => {
     const { name, email, password } = request.body;
     
     if (!name || !email || !password) {
-        return reply.status(400).send({ error: 'Todos los campos son obligatorios' });
+        return reply.status(400).send({ statusCode: 400, intOpCode: 'SxUS400', data: null, error: 'Todos los campos son obligatorios' });
     }
 
     const salt = await bcrypt.genSalt(10);
@@ -73,11 +77,11 @@ fastify.post('/register', async (request, reply) => {
         .single();
 
     if (error) {
-        if (error.code === '23505') return reply.status(400).send({ error: 'El email ya está registrado' });
-        return reply.status(500).send({ error: error.message });
+        if (error.code === '23505') return reply.status(400).send({ statusCode: 400, intOpCode: 'SxUS400', data: null, error: 'El email ya está registrado' });
+        return reply.status(500).send({ statusCode: 500, intOpCode: 'SxUS500', data: null, error: error.message });
     }
 
-    return reply.status(201).send({ message: 'Usuario registrado exitosamente', id: data.id });
+    return reply.status(201).send({ statusCode: 201, intOpCode: 'SxUS201', data: { message: 'Usuario registrado exitosamente', id: data.id } });
 });
 
 // Create User
@@ -100,8 +104,8 @@ fastify.post('/', async (request, reply) => {
         .select('id')
         .single();
 
-    if (error) return reply.status(500).send({ error: error.message });
-    return reply.status(201).send({ message: 'Usuario creado exitosamente', id: data.id });
+    if (error) return reply.status(500).send({ statusCode: 500, intOpCode: 'SxUS500', data: null, error: error.message });
+    return reply.status(201).send({ statusCode: 201, intOpCode: 'SxUS201', data: { message: 'Usuario creado exitosamente', id: data.id } });
 });
 
 // Get Users (with isolation)
@@ -123,8 +127,8 @@ fastify.get('/', async (request, reply) => {
     }
 
     const { data, error } = await query;
-    if (error) return reply.status(500).send({ error: error.message });
-    return data;
+    if (error) return reply.status(500).send({ statusCode: 500, intOpCode: 'SxUS500', data: null, error: error.message });
+    return { statusCode: 200, intOpCode: 'SxUS200', data };
 });
 
 // Get User by ID
@@ -135,8 +139,8 @@ fastify.get('/:id', async (request, reply) => {
         .select('id, name, email, role, group_ids, group_permissions, status, joined_date, permissions')
         .eq('id', id)
         .single();
-    if (error) return reply.status(404).send({ error: 'Usuario no encontrado' });
-    return data;
+    if (error) return reply.status(404).send({ statusCode: 404, intOpCode: 'SxUS404', data: null, error: 'Usuario no encontrado' });
+    return { statusCode: 200, intOpCode: 'SxUS200', data };
 });
 
 // Update User
@@ -155,14 +159,13 @@ fastify.put('/:id', async (request, reply) => {
         delete updates.group_permissions; // Don't overwrite with null
     }
 
-    const { data, error } = await supabase
+    const { error } = await supabase
         .from('users')
         .update(updates)
-        .eq('id', id)
-        .select('id');
+        .eq('id', id);
 
-    if (error) return reply.status(500).send({ error: error.message });
-    return { message: 'Usuario actualizado exitosamente' };
+    if (error) return reply.status(500).send({ statusCode: 500, intOpCode: 'SxUS500', data: null, error: error.message });
+    return { statusCode: 200, intOpCode: 'SxUS200', data: { message: 'Usuario actualizado exitosamente' } };
 });
 
 // Delete User
@@ -177,12 +180,12 @@ fastify.delete('/:id', async (request, reply) => {
         .neq('status', 'Done');
 
     if (tickets && tickets.length > 0) {
-        return reply.status(400).send({ error: 'User has active tickets' });
+        return reply.status(400).send({ statusCode: 400, intOpCode: 'SxUS400', data: null, error: 'User has active tickets' });
     }
 
     const { error } = await supabase.from('users').delete().eq('id', id);
-    if (error) return reply.status(500).send({ error: error.message });
-    return { message: 'Usuario eliminado' };
+    if (error) return reply.status(500).send({ statusCode: 500, intOpCode: 'SxUS500', data: null, error: error.message });
+    return { statusCode: 200, intOpCode: 'SxUS200', data: { message: 'Usuario eliminado' } };
 });
 
 const start = async () => {

@@ -44,7 +44,12 @@ fastify.addHook('onRequest', async (request, reply) => {
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         console.warn('[Gateway] ❌ No se proporcionó Token o formato incorrecto');
-        return reply.status(401).send({ error: 'Acceso Denegado: No se proporcionó Token' });
+        return reply.status(401).send({ 
+            statusCode: 401, 
+            intOpCode: 'SxGW401', 
+            data: null, 
+            error: 'Acceso Denegado: No se proporcionó Token' 
+        });
     }
 
     const token = authHeader.split(' ')[1];
@@ -56,6 +61,9 @@ fastify.addHook('onRequest', async (request, reply) => {
     } catch (err) {
         console.error('[Gateway] ❌ ERROR DE JWT:', err.message);
         return reply.status(401).send({ 
+            statusCode: 401,
+            intOpCode: 'SxGW401',
+            data: null,
             error: 'Token Inválido o Expirado', 
             details: err.message,
             hint: 'Verifica que el JWT_SECRET sea idéntico en todos los servicios y reinicia el backend.'
@@ -91,6 +99,9 @@ fastify.addHook('onRequest', async (request, reply) => {
 
         if (!hasAccess) {
             return reply.status(403).send({ 
+                statusCode: 403,
+                intOpCode: 'SxGW403',
+                data: null,
                 error: 'Acceso Prohibido', 
                 message: `No tienes el permiso necesario: ${matchedRule.perm}`,
                 code: 'FORBIDDEN_ACCESS'

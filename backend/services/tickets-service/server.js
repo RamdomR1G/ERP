@@ -42,8 +42,8 @@ fastify.get('/', async (request, reply) => {
     }
 
     const { data, error } = await query;
-    if (error) return reply.status(500).send({ error: error.message });
-    return data;
+    if (error) return reply.status(500).send({ statusCode: 500, intOpCode: 'SxTK500', data: null, error: error.message });
+    return { statusCode: 200, intOpCode: 'SxTK200', data };
 });
 
 // Get Ticket by ID
@@ -54,15 +54,15 @@ fastify.get('/:id', async (request, reply) => {
         .select('*, assigned_user:users!assigned_to(name), creator:users!created_by(name)')
         .eq('id', id)
         .single();
-    if (error) return reply.status(404).send({ error: 'Not found' });
-    return data;
+    if (error) return reply.status(404).send({ statusCode: 404, intOpCode: 'SxTK404', data: null, error: 'Not found' });
+    return { statusCode: 200, intOpCode: 'SxTK200', data };
 });
 
 // Create Ticket
 fastify.post('/', async (request, reply) => {
     const { data, error } = await supabase.from('tickets').insert([request.body]).select('id').single();
-    if (error) return reply.status(500).send({ error: error.message });
-    return reply.status(201).send({ message: 'Created', id: data.id });
+    if (error) return reply.status(500).send({ statusCode: 500, intOpCode: 'SxTK500', data: null, error: error.message });
+    return reply.status(201).send({ statusCode: 201, intOpCode: 'SxTK201', data });
 });
 
 // Update Ticket (with ownership and field restriction)
@@ -76,7 +76,7 @@ fastify.put('/:id', async (request, reply) => {
     if (role !== 'Admin' && user_id) {
         const { data: ticket } = await supabase.from('tickets').select('assigned_to, created_by').eq('id', id).single();
         if (ticket && (ticket.assigned_to !== user_id && ticket.created_by !== user_id)) {
-            return reply.status(403).send({ error: 'Solo puedes editar tus propios tickets' });
+            return reply.status(403).send({ statusCode: 403, intOpCode: 'SxTK403', data: null, error: 'Solo puedes editar tus propios tickets' });
         }
 
         // Field Validation: ONLY status and comments allowed for non-admins (ticket:move context)
@@ -85,13 +85,13 @@ fastify.put('/:id', async (request, reply) => {
         const forbiddenFields = updateKeys.filter(k => !allowedFields.includes(k));
         
         if (forbiddenFields.length > 0) {
-            return reply.status(403).send({ error: `No tienes permiso para editar campos críticos: ${forbiddenFields.join(', ')}` });
+            return reply.status(403).send({ statusCode: 403, intOpCode: 'SxTK403', data: null, error: `No tienes permiso para editar campos críticos: ${forbiddenFields.join(', ')}` });
         }
     }
 
     const { error } = await supabase.from('tickets').update(updates).eq('id', id);
-    if (error) return reply.status(500).send({ error: error.message });
-    return { message: 'Updated' };
+    if (error) return reply.status(500).send({ statusCode: 500, intOpCode: 'SxTK500', data: null, error: error.message });
+    return { statusCode: 200, intOpCode: 'SxTK200', data: { message: 'Updated' } };
 });
 
 // PATCH /status (Strict Compliance)
@@ -101,19 +101,19 @@ fastify.patch('/:id/status', async (request, reply) => {
     const role = request.headers['x-user-role'];
     const { status } = request.body;
 
-    if (!status) return reply.status(400).send({ error: 'Status is required' });
+    if (!status) return reply.status(400).send({ statusCode: 400, intOpCode: 'SxTK400', data: null, error: 'Status is required' });
 
     // Security Check: If not Admin, must be the owner (assigned_to or creator)
     if (role !== 'Admin' && user_id) {
         const { data: ticket } = await supabase.from('tickets').select('assigned_to, created_by').eq('id', id).single();
         if (ticket && (ticket.assigned_to !== user_id && ticket.created_by !== user_id)) {
-            return reply.status(403).send({ error: 'Solo puedes mover tickets que tengas asignados' });
+            return reply.status(403).send({ statusCode: 403, intOpCode: 'SxTK403', data: null, error: 'Solo puedes mover tickets que tengas asignados' });
         }
     }
 
     const { error } = await supabase.from('tickets').update({ status }).eq('id', id);
-    if (error) return reply.status(500).send({ error: error.message });
-    return { message: 'Ticket status updated' };
+    if (error) return reply.status(500).send({ statusCode: 500, intOpCode: 'SxTK500', data: null, error: error.message });
+    return { statusCode: 200, intOpCode: 'SxTK200', data: { message: 'Ticket status updated' } };
 });
 
 // Delete Ticket (Admin only)
@@ -122,12 +122,12 @@ fastify.delete('/:id', async (request, reply) => {
     const role = request.headers['x-user-role'];
 
     if (role !== 'Admin') {
-        return reply.status(403).send({ error: 'Solo los administradores pueden borrar tickets' });
+        return reply.status(403).send({ statusCode: 403, intOpCode: 'SxTK403', data: null, error: 'Solo los administradores pueden borrar tickets' });
     }
 
     const { error } = await supabase.from('tickets').delete().eq('id', id);
-    if (error) return reply.status(500).send({ error: error.message });
-    return { message: 'Deleted' };
+    if (error) return reply.status(500).send({ statusCode: 500, intOpCode: 'SxTK500', data: null, error: error.message });
+    return { statusCode: 200, intOpCode: 'SxTK200', data: { message: 'Deleted' } };
 });
 
 const start = async () => {
