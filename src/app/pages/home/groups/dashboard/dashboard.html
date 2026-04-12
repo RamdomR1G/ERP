@@ -26,7 +26,6 @@
           <i [class]="item.icon"></i>
         </ng-template>
       </p-selectButton>
-      <p-button *appHasPermission="'group:edit'" icon="pi pi-cog" [outlined]="true" severity="secondary" (onClick)="goToSettings()" pTooltip="Manage Group Settings"></p-button>
       <p-button *appHasPermission="'ticket:add'" label="Create Ticket" icon="pi pi-plus" (onClick)="newTicket()"></p-button>
     </div>
   </div>
@@ -277,6 +276,7 @@
             <th pSortableColumn="status">Status <p-sortIcon field="status"></p-sortIcon></th>
             <th pSortableColumn="priority">Priority <p-sortIcon field="priority"></p-sortIcon></th>
             <th pSortableColumn="assignedTo">Assignee <p-sortIcon field="assignedTo"></p-sortIcon></th>
+            <th pSortableColumn="group_id">Group <p-sortIcon field="group_id"></p-sortIcon></th>
             <th pSortableColumn="deadline">Deadline <p-sortIcon field="deadline"></p-sortIcon></th>
           </tr>
         </ng-template>
@@ -288,6 +288,7 @@
             <td><p-tag [value]="ticket.status" severity="secondary"></p-tag></td>
             <td><p-tag [value]="ticket.priority" [severity]="getTicketSeverity(ticket.priority)"></p-tag></td>
             <td>{{getUserName(ticket.assigned_to)}}</td>
+            <td><p-tag [value]="groupName" severity="info" [rounded]="true"></p-tag></td>
             <td>{{ticket.deadline || (ticket.created_on | date:'shortDate')}}</td>
           </tr>
         </ng-template>

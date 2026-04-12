@@ -332,12 +332,18 @@ export class GroupDashboardComponent implements OnInit {
   canEditPartial(): boolean {
     if (!this.editingTicketRef) return false;
     if (this.authService.hasPermission('ticket:edit')) return true;
-    return this.currentUserId === this.editingTicketRef.assigned_to;
+    return this.currentUserId === this.editingTicketRef.assigned_to && this.authService.hasPermission('ticket:move');
   }
 
   hasTicketEditAccess(ticket: Ticket): boolean {
+    // Admin override
     if (this.authService.hasPermission('ticket:edit')) return true;
-    return this.currentUserId === ticket.assigned_to;
+    
+    // Regular dynamic rule: Assigned To Me AND has move permission
+    const isAssigned = this.currentUserId === ticket.assigned_to;
+    const canMove = this.authService.hasPermission('ticket:move');
+    
+    return isAssigned && canMove;
   }
 
   addComment() {
