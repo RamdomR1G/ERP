@@ -4,14 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
-import { TabsModule } from 'primeng/tabs';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
-import { SelectModule } from 'primeng/select';
-import { MultiSelectModule } from 'primeng/multiselect';
-import { ChipModule } from 'primeng/chip';
-import { CardModule } from 'primeng/card';
-import { TooltipModule } from 'primeng/tooltip';
+import { Select } from 'primeng/select';
+import { MultiSelect } from 'primeng/multiselect';
+import { Tabs, TabList, Tab, TabPanels, TabPanel } from 'primeng/tabs';
+import { Tooltip } from 'primeng/tooltip';
 import { AuthService, AppUser, UserGroup } from '../../../services/auth.service';
 import { GroupService } from '../../../services/group.service';
 import { HasPermissionDirective } from '../../../directives/has-permission.directive';
@@ -26,14 +24,16 @@ import { forkJoin } from 'rxjs';
     TableModule, 
     ButtonModule, 
     TagModule, 
-    TabsModule, 
+    Tabs,
+    TabList,
+    Tab,
+    TabPanels,
+    TabPanel,
     DialogModule, 
     InputTextModule, 
-    SelectModule, 
-    MultiSelectModule, 
-    ChipModule, 
-    CardModule, 
-    TooltipModule,
+    Select, 
+    MultiSelect, 
+    Tooltip,
     HasPermissionDirective
   ],
   templateUrl: './admin.html',
@@ -63,10 +63,29 @@ export class AdminComponent implements OnInit {
   availableRoles = [{label: 'Admin', value: 'Admin'}, {label: 'User', value: 'User'}, {label: 'Manager', value: 'Manager'}];
   availableStatuses = [{label: 'Active', value: 'Active'}, {label: 'Inactive', value: 'Inactive'}];
   
-  // Posibles permisos granulares para el selector
+  availableIcons = [
+    { label: 'Briefcase', value: 'pi pi-briefcase' },
+    { label: 'Building', value: 'pi pi-building' },
+    { label: 'Database', value: 'pi pi-database' },
+    { label: 'Charts', value: 'pi pi-chart-bar' },
+    { label: 'Folder', value: 'pi pi-folder' },
+    { label: 'Settings', value: 'pi pi-cog' },
+    { label: 'Box', value: 'pi pi-box' },
+    { label: 'Envelope', value: 'pi pi-envelope' },
+    { label: 'Flag', value: 'pi pi-flag' },
+    { label: 'Key', value: 'pi pi-key' }
+  ];
+  
+  // Lista completa de permisos granulares para el ERP
   allPermissions = [
-    'ticket:view', 'ticket:add', 'ticket:edit', 'ticket:delete', 'ticket:move',
-    'group:view', 'users:view', '*'
+    // TICKETS
+    'tickets:view', 'tickets:add', 'tickets:edit', 'tickets:delete', 'tickets:move', 'tickets:comment',
+    // USUARIOS
+    'users:view', 'users:manage', 'users:add', 'users:edit', 'users:delete',
+    // GRUPOS / WORKSPACES
+    'groups:view', 'groups:manage', 'groups:add', 'groups:edit', 'groups:delete',
+    // GLOBAL (TODOS LOS PERMISOS)
+    '*'
   ];
 
   ngOnInit() {
@@ -79,9 +98,9 @@ export class AdminComponent implements OnInit {
       groups: this.groupService.getGroups()
     }).subscribe(res => {
       this.users = res.users;
-      this.groups = (res.groups as any).data || res.groups; // Handle unwrapped or raw
+      this.groups = (res.groups as any).data || res.groups;
       this.calculateStats();
-      this.cdr.detectChanges();
+      this.cdr.markForCheck(); // Safer than detectChanges() to avoid NG0100
     });
   }
 
@@ -150,13 +169,27 @@ export class AdminComponent implements OnInit {
   saveGroup() {
     if (!this.selectedGroup.name) return;
 
-    const obs$ = this.selectedGroup.id
-        ? this.groupService.updateGroup(this.selectedGroup.id, this.selectedGroup)
-        : this.groupService.createGroup(this.selectedGroup);
+    // Sanitize payload: remove calculated fields or ID from the body
+    const payload: Partial<UserGroup> = {
+        name: this.selectedGroup.name,
+        description: this.selectedGroup.description || '',
+        icon: this.selectedGroup.icon || 'pi pi-folder',
+        color: this.selectedGroup.color || '#6366f1'
+    };
 
-    obs$.subscribe(() => {
-        this.groupVisible = false;
-        this.refreshData();
+    const obs$ = this.selectedGroup.id
+        ? this.groupService.updateGroup(this.selectedGroup.id, payload)
+        : this.groupService.createGroup(payload);
+
+    obs$.subscribe({
+        next: () => {
+            this.groupVisible = false;
+            this.refreshData();
+        },
+        error: (err) => {
+            console.error('[Admin] Error saving group:', err);
+            // Minimal feedback could be added here later (e.g. Toast)
+        }
     });
   }
 
@@ -165,6 +198,8 @@ export class AdminComponent implements OnInit {
       this.groupService.deleteGroup(group.id).subscribe(() => this.refreshData());
   }
 
+  private EMPTY_PERMS: string[] = [];
+
   // ── PBAC HELPERS ───────────────────────────────
   getGroupName(groupId: string): string {
       const g = this.groups.find(x => x.id === groupId);
@@ -172,12 +207,22 @@ export class AdminComponent implements OnInit {
   }
 
   getGroupPerms(groupId: string): string[] {
-      if (!this.selectedUser.group_permissions) return [];
-      return this.selectedUser.group_permissions[groupId] || [];
+      if (!this.selectedUser || !this.selectedUser.group_permissions) return this.EMPTY_PERMS;
+      return this.selectedUser.group_permissions[groupId] || this.EMPTY_PERMS;
+  }
+
+  getGroupColor(groupId: any): string {
+      if (!groupId) return '#6466f1';
+      const g = this.groups.find(x => x.id === groupId);
+      return g?.color || '#6466f1';
   }
 
   updateGroupPerms(groupId: string, perms: string[]) {
-      if (!this.selectedUser.group_permissions) this.selectedUser.group_permissions = {};
+      if (!this.selectedUser) return;
+      if (!this.selectedUser.group_permissions) {
+          this.selectedUser.group_permissions = {};
+      }
       this.selectedUser.group_permissions[groupId] = perms;
+      this.cdr.markForCheck(); // Ensure UI reflects change if needed
   }
 }

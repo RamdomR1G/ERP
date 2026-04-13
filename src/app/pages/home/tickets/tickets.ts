@@ -1,7 +1,7 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TableModule } from 'primeng/table';
+import { Table, TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { DialogModule } from "primeng/dialog";
@@ -16,6 +16,9 @@ import { Observable, forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { TooltipModule } from 'primeng/tooltip';
 import { DividerModule } from 'primeng/divider';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
+import { DragDropModule, CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 
 @Component({
   selector: 'app-tickets',
@@ -23,7 +26,9 @@ import { DividerModule } from 'primeng/divider';
   imports: [CommonModule, 
     FormsModule, TableModule, ButtonModule, 
     TagModule, DialogModule, InputTextModule, 
-    SelectModule, CheckboxModule, TooltipModule, DividerModule],
+    SelectModule, CheckboxModule, TooltipModule, DividerModule,
+    IconFieldModule, InputIconModule,
+    DragDropModule],
   templateUrl: './tickets.html',
   styleUrl: './tickets.css',
 })
@@ -33,6 +38,16 @@ export class TicketsComponent implements OnInit {
   groupService = inject(GroupService);
   cdr = inject(ChangeDetectorRef);
   private http = inject(HttpClient);
+  
+  @ViewChild('dt') table?: Table;
+
+  viewMode: 'table' | 'kanban' = 'kanban';
+  kanbanColumns: any = {
+    'Pending': [],
+    'In Progress': [],
+    'Review': [],
+    'Done': []
+  };
   
   // ── DROPDOWN OPTIONS ───────────────────────────
   statuses = [
@@ -56,7 +71,12 @@ export class TicketsComponent implements OnInit {
   viewFilter: 'All' | 'Group' | 'Mine' = 'All';
   selectedGroup: any = null;
   filteredTickets: any[] = [];
-  groupsList: any[] = []; // Stores the dropdown groups array
+  groupsList: any[] = []; 
+  public ticketSearchTerm: string = '';
+
+  // PrimeNG Filter Options
+  statusOptions = this.statuses.map(s => ({ label: s.name, value: s.name }));
+  priorityOptions = this.priorities.map(p => ({ label: p.name, value: p.name }));
 
   // ── VIEW TICKET ────────────────────────────────
   viewDialogVisible: boolean = false;
@@ -91,30 +111,91 @@ export class TicketsComponent implements OnInit {
       tickets: ticketsReq,
       groups: this.groupService.getGroups().pipe(catchError(() => of([])))
     }).subscribe({
-        next: (res) => {
+        next: (res: any) => {
             this.tickets = res.tickets;
             this.groupsList = res.groups;
             this.applyFilter();
         },
-        error: (err) => console.error('Failed to load data', err)
+        error: (err: any) => console.error('Failed to load data', err)
     });
   }
 
   applyFilter() {
       if (!this.currentUser) return;
       
+      let filtered = this.tickets;
+
+      // 1. apply View Filter (Mine/Group/All)
       if (this.viewFilter === 'Mine') {
-          this.filteredTickets = this.tickets.filter(t => t.assigned_to === this.currentUser.id);
+          filtered = filtered.filter(t => t.assigned_to === this.currentUser.id);
       } else if (this.viewFilter === 'Group' && this.selectedGroup) {
-          // Compare with selected dropdown group ID
-          this.filteredTickets = this.tickets.filter(t => t.group_id === this.selectedGroup);
+          filtered = filtered.filter(t => t.group_id === this.selectedGroup);
       } else if (this.viewFilter === 'Group' && !this.selectedGroup) {
-          this.filteredTickets = []; // Wait for selection
-      } else {
-          this.filteredTickets = this.tickets;
+          filtered = [];
+      } 
+
+      // 2. apply text search (for Kanban & Table pre-filtering)
+      const term = (this.ticketSearchTerm || '').toLowerCase().trim();
+      if (term) {
+          filtered = filtered.filter(t => 
+              (t.title && t.title.toLowerCase().includes(term)) || 
+              (t.id && t.id.toString().includes(term))
+          );
       }
+
+      this.filteredTickets = filtered;
+
+      // Group for Kanban
+      this.kanbanColumns = {
+          'Pending': this.filteredTickets.filter(t => t.status === 'Pending'),
+          'In Progress': this.filteredTickets.filter(t => t.status === 'In Progress'),
+          'Review': this.filteredTickets.filter(t => t.status === 'Review'),
+          'Done': this.filteredTickets.filter(t => t.status === 'Done')
+      };
+
       this.updateStats();
-      this.cdr.detectChanges();
+      this.cdr.markForCheck();
+  }
+
+  onSearchChange() {
+      if (this.table) {
+          this.table.filterGlobal(this.ticketSearchTerm, 'contains');
+      }
+      this.applyFilter();
+  }
+
+  onGlobalFilter(table: any, event: Event) {
+      if (event && event.target) {
+          table.filterGlobal((event.target as HTMLInputElement).value, 'contains');
+      }
+  }
+
+  drop(event: CdkDragDrop<any[]>) {
+    if (event.previousContainer === event.container) {
+      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+    } else {
+      const ticket = event.previousContainer.data[event.previousIndex];
+      const newStatus = event.container.id; 
+
+      transferArrayItem(
+        event.previousContainer.data,
+        event.container.data,
+        event.previousIndex,
+        event.currentIndex
+      );
+
+      this.ticketService.updateTicket(ticket.id, { status: newStatus }).subscribe({
+          next: () => {
+              ticket.status = newStatus;
+              this.updateStats();
+              this.cdr.markForCheck();
+          },
+          error: (err: any) => {
+              console.error('Failed to move ticket', err);
+              this.loadData();
+          }
+      });
+    }
   }
 
   setFilter(filter: 'All' | 'Group' | 'Mine') {
@@ -170,7 +251,7 @@ export class TicketsComponent implements OnInit {
             this.viewDialogVisible = false;
             this.loadData();
         },
-        error: (err) => console.error('Error updating ticket:', err)
+        error: (err: any) => console.error('Error updating ticket:', err)
     });
   }
 

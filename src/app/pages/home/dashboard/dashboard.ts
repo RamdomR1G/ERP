@@ -25,6 +25,7 @@ export class DashboardComponent implements OnInit {
   currentUser: any;
   groupsData: UserGroup[] = [];
   personalTickets: any[] = [];
+  allTickets: any[] = []; // Global dataset for executive view
   stats: any[] = [];
 
   // ── CHARTS ──────────────────────────────────────
@@ -32,6 +33,7 @@ export class DashboardComponent implements OnInit {
   statusChartOptions: any;
   priorityChartData: any;
   priorityChartOptions: any;
+  groupChartData: any;
 
   constructor(
     public authService: AuthService, 
@@ -48,18 +50,21 @@ export class DashboardComponent implements OnInit {
 
       // Fetch fresh user data to ensure group_permissions and context are up to date
       const userRefreshReq = this.http.get<any>(`http://localhost:3000/api/users/${storedUser.id}`).pipe(catchError(() => of(storedUser)));
-      const ticketsReq = this.ticketService.getUserTickets(storedUser.id).pipe(catchError(() => of([])));
+      const personalTicketsReq = this.ticketService.getUserTickets(storedUser.id).pipe(catchError(() => of([])));
+      const allTicketsReq = this.ticketService.getAllTickets().pipe(catchError(() => of([])));
       const groupsReq = this.groupService.getGroups().pipe(catchError(() => of([])));
 
       forkJoin({
           user: userRefreshReq,
-          tickets: ticketsReq,
+          personal: personalTicketsReq,
+          all: allTicketsReq,
           groups: groupsReq
       }).subscribe(res => {
           this.currentUser = res.user;
-          this.authService.setCurrentUser(res.user); // Sync back to service
+          this.authService.setCurrentUser(res.user); 
           
-          this.personalTickets = res.tickets;
+          this.personalTickets = res.personal;
+          this.allTickets = res.all;
           this.personalTickets.sort((a,b) => new Date(b.created_on).getTime() - new Date(a.created_on).getTime());
 
           // The groups come pre-filtered from the server according to user isolation rules
@@ -105,19 +110,20 @@ export class DashboardComponent implements OnInit {
   }
 
   calculateStats() {
-      const activeTickets = this.personalTickets.filter(t => t.status !== 'Done' && t.status !== 'Closed');
-      const pendingCnt = activeTickets.filter(t => t.status === 'Pending').length;
-      const inProgCnt = activeTickets.filter(t => t.status === 'In Progress').length;
+      // 1. Overview Cards (Global Context)
+      const globalActive = this.allTickets.filter(t => t.status !== 'Done' && t.status !== 'Closed');
+      const pendingCnt = globalActive.filter(t => t.status === 'Pending').length;
+      const myAssigned = this.personalTickets.filter(t => t.status !== 'Done' && t.status !== 'Closed').length;
       
       this.stats = [
-        { label: 'Assigned active', value: activeTickets.length, icon: 'pi pi-ticket', color: '#6366f1' },
-        { label: 'Pending', value: pendingCnt, icon: 'pi pi-clock', color: '#f97316' },
-        { label: 'In Progress', value: inProgCnt, icon: 'pi pi-spinner', color: '#22c55e' },
+        { label: 'Total Global Active', value: globalActive.length, icon: 'pi pi-globe', color: '#6366f1' },
+        { label: 'Unchecked Pending', value: pendingCnt, icon: 'pi pi-clock', color: '#f97316' },
+        { label: 'My Personal Work', value: myAssigned, icon: 'pi pi-user', color: '#22c55e' },
       ];
 
-      // Prepare Chart Data
+      // 2. Status Distribution (Global)
       const statuses = ['Pending', 'In Progress', 'Done', 'Review', 'Closed'];
-      const statusCounts = statuses.map(s => this.personalTickets.filter(t => t.status === s).length);
+      const statusCounts = statuses.map(s => this.allTickets.filter(t => t.status === s).length);
 
       this.statusChartData = {
           labels: statuses,
@@ -128,16 +134,34 @@ export class DashboardComponent implements OnInit {
           }]
       };
 
+      // 3. Priority Overview (Global)
       const priorities = ['High', 'Medium', 'Low'];
-      const priorityCounts = priorities.map(p => this.personalTickets.filter(t => t.priority === p).length);
+      const priorityCounts = priorities.map(p => this.allTickets.filter(t => t.priority === p).length);
 
       this.priorityChartData = {
           labels: priorities,
           datasets: [{
-              label: 'Tickets by Priority',
+              label: 'Global Priority Load',
               data: priorityCounts,
               backgroundColor: ['#ef4444', '#f97316', '#3b82f6'],
               borderRadius: 8
+          }]
+      };
+
+      // 4. Tickets per Group (Workspace Distribution)
+      const groupStats = this.groupsData.map(group => {
+          return {
+              name: group.name,
+              count: this.allTickets.filter(t => t.group_id === group.id).length
+          };
+      });
+
+      this.groupChartData = {
+          labels: groupStats.map(g => g.name),
+          datasets: [{
+              data: groupStats.map(g => g.count),
+              backgroundColor: ['#6366f1', '#a855f7', '#3b82f6', '#10b981', '#f59e0b', '#ef4444'],
+              hoverBackgroundColor: ['#818cf8', '#c084fc', '#60a5fa', '#34d399', '#fbbf24', '#f87171']
           }]
       };
   }

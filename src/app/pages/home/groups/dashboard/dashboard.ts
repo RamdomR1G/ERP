@@ -23,7 +23,24 @@ import { HasPermissionDirective } from '../../../../directives/has-permission.di
 @Component({
   selector: 'app-group-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonModule, CardModule, TagModule, DialogModule, InputTextModule, SelectModule, DragDropModule, TableModule, SelectButtonModule, IconFieldModule, InputIconModule, TooltipModule, HasPermissionDirective, ChartModule],
+  imports: [
+    CommonModule, 
+    FormsModule, 
+    ButtonModule, 
+    CardModule, 
+    TagModule, 
+    DialogModule, 
+    InputTextModule, 
+    SelectModule, 
+    DragDropModule, 
+    TableModule, 
+    SelectButtonModule, 
+    IconFieldModule, 
+    InputIconModule, 
+    TooltipModule, 
+    HasPermissionDirective, 
+    ChartModule
+  ],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css'
 })
@@ -35,19 +52,16 @@ export class GroupDashboardComponent implements OnInit {
   private groupService = inject(GroupService);
   private cdr = inject(ChangeDetectorRef);
 
-  groupId: string | null = null;
-  groupName: string = 'Loading...';
+  // Core Properties (Restored)
+  public groupId: string | null = null;
+  public groupName: string = 'Loading...';
+  public viewMode: string = 'kanban';
+  public ticketSearchTerm = ''; // Type inferred
 
-  viewMode: string = 'kanban';
-  viewOptions = [
-    { icon: 'pi pi-server', value: 'kanban' },
-    { icon: 'pi pi-list', value: 'list' }
-  ];
-
-  // System Users for assignments
-  systemUsers: AppUser[] = [];
-  groupMembers: AppUser[] = [];
-  membersVisible: boolean = false;
+  // Member Management Hub logic
+  public groupMembers: AppUser[] = [];
+  public systemUsers: AppUser[] = [];
+  public membersVisible: boolean = false;
 
   // Modal logic for Add Ticket
   visible: boolean = false;
@@ -218,16 +232,28 @@ export class GroupDashboardComponent implements OnInit {
   }
   
   getFilteredTickets(baseList: Ticket[]) {
+    let filtered = baseList;
+    
+    // 1. Search Filter
+    const term = (this.ticketSearchTerm || '').toLowerCase().trim();
+    if (term) {
+        filtered = filtered.filter(t => 
+            (t.title && t.title.toLowerCase().includes(term)) || 
+            (t.id && t.id.toString().includes(term))
+        );
+    }
+
+    // 2. Category Filter
     switch (this.activeFilter) {
       case 'My Tickets':
-        return baseList.filter(t => t.assigned_to === this.currentUserId);
+        return filtered.filter(t => t.assigned_to === this.currentUserId);
       case 'Unassigned':
-        return baseList.filter(t => !t.assigned_to);
+        return filtered.filter(t => !t.assigned_to);
       case 'High Priority':
-        return baseList.filter(t => ['High', 'Very High', 'Urgent'].includes(t.priority));
+        return filtered.filter(t => ['High', 'Very High', 'Urgent'].includes(t.priority));
       case 'All':
       default:
-        return baseList;
+        return filtered;
     }
   }
 
@@ -295,7 +321,7 @@ export class GroupDashboardComponent implements OnInit {
   }
 
   goBack() {
-    this.router.navigate(['/home/groups']);
+    this.router.navigate(['/home/dashboard']);
   }
 
   goToSettings() {
@@ -325,23 +351,23 @@ export class GroupDashboardComponent implements OnInit {
 
   canEditFull(): boolean {
     if (!this.editingTicketRef) return true; // new ticket mode
-    if (this.authService.hasPermission('ticket:edit')) return true; // admins can do everything
+    if (this.authService.hasPermission('tickets:edit')) return true; // admins can do everything
     return this.currentUserId === this.editingTicketRef.created_by;
   }
 
   canEditPartial(): boolean {
     if (!this.editingTicketRef) return false;
-    if (this.authService.hasPermission('ticket:edit')) return true;
-    return this.currentUserId === this.editingTicketRef.assigned_to && this.authService.hasPermission('ticket:move');
+    if (this.authService.hasPermission('tickets:edit')) return true;
+    return this.currentUserId === this.editingTicketRef.assigned_to && this.authService.hasPermission('tickets:move');
   }
 
   hasTicketEditAccess(ticket: Ticket): boolean {
     // Admin override
-    if (this.authService.hasPermission('ticket:edit')) return true;
+    if (this.authService.hasPermission('tickets:edit')) return true;
     
     // Regular dynamic rule: Assigned To Me AND has move permission
     const isAssigned = this.currentUserId === ticket.assigned_to;
-    const canMove = this.authService.hasPermission('ticket:move');
+    const canMove = this.authService.hasPermission('tickets:move');
     
     return isAssigned && canMove;
   }

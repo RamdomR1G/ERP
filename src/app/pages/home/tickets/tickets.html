@@ -96,10 +96,52 @@
   </p-dialog>
 
   <!-- TICKETS DASHBOARD (READ ONLY) -->
-  <h2 class="page-title"><i class="pi pi-compass mr-3" style="font-size: 2rem;"></i>Global Tickets Dashboard</h2>
+  <div class="flex justify-content-between align-items-center mb-4">
+    <h2 class="page-title m-0"><i class="pi pi-compass mr-3" style="font-size: 2rem;"></i>Tickets Monitoring</h2>
+    
+    <div class="flex align-items-center gap-3">
+        <!-- VIEW MODE TOGGLE -->
+        <div class="view-toggle">
+            <p-button icon="pi pi-table" [severity]="viewMode === 'table' ? 'primary' : 'secondary'" [text]="true" (click)="viewMode = 'table'" pTooltip="Table View" />
+            <p-button icon="pi pi-th-large" [severity]="viewMode === 'kanban' ? 'primary' : 'secondary'" [text]="true" (click)="viewMode = 'kanban'" pTooltip="Kanban View" />
+        </div>
+        
+        <p-divider layout="vertical"></p-divider>
+
+        <!-- FILTERS -->
+        <div class="p-buttonset flex align-items-center">
+            <p-button label="All" [severity]="viewFilter === 'All' ? 'primary' : 'secondary'" (click)="setFilter('All')" [disabled]="!authService.hasPermission('ticket:view')" size="small" />
+            <p-select *ngIf="authService.hasPermission('ticket:view')"
+                    [options]="groupsList" 
+                    [(ngModel)]="selectedGroup" 
+                    (onChange)="onGroupSelect($event)"
+                    optionLabel="name" 
+                    optionValue="id" 
+                    placeholder="Workspace..." 
+                    [showClear]="true"
+                    class="mx-2 p-select-sm"></p-select>
+            <p-button label="Mine" [severity]="viewFilter === 'Mine' ? 'primary' : 'secondary'" (click)="setFilter('Mine')" size="small" />
+        </div>
+
+        <p-divider layout="vertical"></p-divider>
+
+        <!-- GLOBAL SEARCH -->
+        <p-iconfield iconPosition="left">
+            <p-inputicon><i class="pi pi-search"></i></p-inputicon>
+            <input pInputText type="text" 
+                   [(ngModel)]="ticketSearchTerm" 
+                   (input)="onSearchChange()"
+                   placeholder="Search tickets..." 
+                   style="width: 250px;" 
+                   class="p-inputtext-sm" />
+        </p-iconfield>
+
+        <p-divider layout="vertical"></p-divider>
+    </div>
+  </div>
 
   <!-- TOTAL N CARDS -->
-  <div class="stats-grid">
+  <div class="stats-grid mb-4">
     @for (stat of stats; track stat.label) {
       <div class="stat-card">
         <div class="stat-icon" [style.background]="stat.color + '18'" [style.color]="stat.color">
@@ -113,54 +155,135 @@
     }
   </div>
 
-  <!-- TICKETS TABLE -->
-  <div class="table-wrapper">
-    <div class="tab-header flex justify-content-between align-items-center">
-      <span class="tab-subtitle">Monitoring all generated tickets</span>
-      
-      <!-- FILTERS -->
-      <div class="p-buttonset flex align-items-center">
-        <p-button label="All Tickets" [severity]="viewFilter === 'All' ? 'primary' : 'secondary'" (onClick)="setFilter('All')" [disabled]="!authService.hasPermission('ticket:view')" />
-        
-        <p-select *ngIf="authService.hasPermission('ticket:view')"
-                  [options]="groupsList" 
-                   [(ngModel)]="selectedGroup" 
-                  (onChange)="onGroupSelect($event)"
-                  optionLabel="name" 
-                  optionValue="id" 
-                  placeholder="Filter by Group..." 
-                  [showClear]="true"
-                  class="mx-2"></p-select>
+  <!-- KANBAN VIEW -->
+  @if (viewMode === 'kanban') {
+    <div class="kanban-board" cdkDropListGroup>
+      @for (statusObj of statuses; track statusObj.name) {
+        <div class="kanban-column">
+          <div class="kanban-header">
+            <div class="flex align-items-center gap-2">
+                <div class="status-indicator" [attr.data-status]="statusObj.name"></div>
+                <h3>{{ statusObj.name }}</h3>
+            </div>
+            <span class="count-badge">{{ kanbanColumns[statusObj.name]?.length || 0 }}</span>
+          </div>
 
-        <p-button label="My Tickets" [severity]="viewFilter === 'Mine' ? 'primary' : 'secondary'" (onClick)="setFilter('Mine')" />
-      </div>
+          <div cdkDropList 
+               [id]="statusObj.name"
+               [cdkDropListData]="kanbanColumns[statusObj.name]" 
+               class="kanban-list" 
+               (cdkDropListDropped)="drop($event)">
+               
+            @for (ticket of kanbanColumns[statusObj.name]; track ticket.id) {
+              <div class="kanban-card" cdkDrag (click)="openTicketDetails(ticket)">
+                <!-- Modern Left Priority Bar -->
+                <div class="card-priority-bar" [attr.data-priority]="ticket.priority"></div>
+                
+                <div class="card-body">
+                    <div class="card-header-meta">
+                        <span class="ticket-id">#{{ ticket.id }}</span>
+                        <p-tag [value]="ticket.priority" [severity]="getPrioritySeverity(ticket.priority)" styleClass="premium-mini-tag" />
+                    </div>
+                    
+                    <h4 class="ticket-title">{{ ticket.title }}</h4>
+                    
+                    <div class="card-footer-luxury">
+                        <div class="user-avatar-tag">
+                            <div class="avatar-circle">
+                                {{ (ticket.assigned_user?.name || 'U').substring(0,1).toUpperCase() }}
+                            </div>
+                            <span class="user-name">{{ ticket.assigned_user?.name || 'Unassigned' }}</span>
+                        </div>
+                        <div class="card-stats" *ngIf="ticket.comments.length">
+                            <i class="pi pi-comments"></i>
+                            <span>{{ ticket.comments.length }}</span>
+                        </div>
+                    </div>
+                </div>
+              </div>
+            } @empty {
+              <div class="column-empty">
+                <i class="pi pi-inbox"></i>
+                <p>No tickets</p>
+              </div>
+            }
+          </div>
+        </div>
+      }
     </div>
-    <p-table [value]="filteredTickets" [paginator]="true" [rows]="10" [tableStyle]="{'min-width':'60rem'}">
-      <ng-template pTemplate="header">
-        <tr>
-          <th>ID</th><th>Title</th><th>Status</th><th>Priority</th><th>Creator</th><th>Assigned To</th><th>Deadline</th><th>Actions</th>
-        </tr>
-      </ng-template>
-      <ng-template pTemplate="body" let-ticket>
-        <tr>
-          <td><strong>#{{ ticket.id }}</strong></td>
-          <td>{{ ticket.title }}</td>
-          <td><p-tag [value]="ticket.status" [severity]="getTicketSeverity(ticket.status)" /></td>
-          <td><p-tag [value]="ticket.priority" [severity]="getPrioritySeverity(ticket.priority)" /></td>
-          <td><span class="muted-text">{{ ticket.creator?.name || 'Unknown' }}</span></td>
-          <td>{{ ticket.assigned_user?.name || 'Unassigned' }}</td>
-          <td>{{ ticket.deadline || (ticket.created_on | date:'shortDate') }}</td>
-          <td>
-             <p-button icon="pi pi-eye" [text]="true" severity="info" size="small" (onClick)="openTicketDetails(ticket)" pTooltip="View / Edit" />
-             <p-button *ngIf="isAdmin" icon="pi pi-trash" [text]="true" severity="danger" size="small" pTooltip="Delete Ticket" />
-          </td>
-        </tr>
-      </ng-template>
-      <ng-template pTemplate="emptymessage">
-        <tr>
-          <td colspan="7" class="text-center p-4">No tickets found for your view permissions.</td>
-        </tr>
-      </ng-template>
-    </p-table>
-  </div>
+  } @else {
+    <!-- TABLE VIEW -->
+    <div class="table-wrapper">
+      <p-table #dt [value]="filteredTickets" [paginator]="true" [rows]="10" 
+               styleClass="p-datatable-sm p-datatable-highlight"
+               [globalFilterFields]="['id', 'title', 'status', 'priority', 'assigned_user.name']">
+        <ng-template pTemplate="header">
+          <tr>
+            <th pSortableColumn="id">ID <p-sortIcon field="id" /></th>
+            <th pSortableColumn="title">Title <p-sortIcon field="title" /></th>
+            <th pSortableColumn="status">
+                <div class="flex align-items-center">
+                    Status <p-sortIcon field="status" />
+                    <p-columnFilter field="status" matchMode="equals" display="menu" [showMenu]="false" class="ml-auto">
+                        <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                            <p-select [ngModel]="value" [options]="statusOptions" (onChange)="filter($event.value)" placeholder="Select" [showClear]="true">
+                                <ng-template let-option pTemplate="item">
+                                    <p-tag [value]="option.value" [severity]="getTicketSeverity(option.value)" />
+                                </ng-template>
+                            </p-select>
+                        </ng-template>
+                    </p-columnFilter>
+                </div>
+            </th>
+            <th pSortableColumn="priority">
+                <div class="flex align-items-center">
+                    Priority <p-sortIcon field="priority" />
+                    <p-columnFilter field="priority" matchMode="equals" display="menu" [showMenu]="false" class="ml-auto">
+                        <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                            <p-select [ngModel]="value" [options]="priorityOptions" (onChange)="filter($event.value)" placeholder="Select" [showClear]="true">
+                                <ng-template let-option pTemplate="item">
+                                    <p-tag [value]="option.value" [severity]="getPrioritySeverity(option.value)" />
+                                </ng-template>
+                            </p-select>
+                        </ng-template>
+                    </p-columnFilter>
+                </div>
+            </th>
+            <th>Creator</th>
+            <th pSortableColumn="assigned_user.name">
+                <div class="flex align-items-center">
+                    Assigned <p-sortIcon field="assigned_user.name" />
+                    <p-columnFilter type="text" field="assigned_user.name" display="menu" [showMenu]="false" class="ml-auto" placeholder="Filter by user"></p-columnFilter>
+                </div>
+            </th>
+            <th pSortableColumn="deadline">Deadline <p-sortIcon field="deadline" /></th>
+            <th class="text-right">Manage</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-ticket>
+          <tr class="user-row">
+            <td><strong>#{{ ticket.id }}</strong></td>
+            <td><span class="font-medium">{{ ticket.title }}</span></td>
+            <td><p-tag [value]="ticket.status" [severity]="getTicketSeverity(ticket.status)" /></td>
+            <td><p-tag [value]="ticket.priority" [severity]="getPrioritySeverity(ticket.priority)" /></td>
+            <td><span class="text-xs text-500">{{ ticket.creator?.name || 'Unknown' }}</span></td>
+            <td><span class="text-xs font-semibold">{{ ticket.assigned_user?.name || 'Unassigned' }}</span></td>
+            <td>{{ ticket.deadline || (ticket.created_on | date:'shortDate') }}</td>
+            <td class="text-right">
+               <p-button icon="pi pi-eye" [text]="true" severity="info" size="small" (click)="openTicketDetails(ticket)" pTooltip="View Details" />
+               <p-button *ngIf="isAdmin" icon="pi pi-trash" [text]="true" severity="danger" size="small" pTooltip="Delete Permanent" />
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="8" class="text-center p-6 text-500">
+                <i class="pi pi-search-minus mb-3 block" style="font-size: 2rem;"></i>
+                No tickets found with the current filters.
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  }
 </div>

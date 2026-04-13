@@ -1,5 +1,6 @@
 const { createClient } = require('@supabase/supabase-js');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const supabaseUrl = process.env.SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -57,12 +58,32 @@ exports.loginUser = async (req, res) => {
             return res.status(401).json({ error: 'Credenciales inválidas' });
         }
 
-        // 3. Return user context without the hash
+        // 3. Prepare JWT Payload (userId, base info, and group_permissions)
         delete user.password_hash;
         
+        // Ensure group_permissions is parsed if it's a string
+        let perms = user.permissions || {}; // In this context, we'll assume 'permissions' column stores the map
+        if (typeof perms === 'string') {
+            try { perms = JSON.parse(perms); } catch(e) { perms = {}; }
+        }
+
+        const payload = {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            group_permissions: perms // Requirement: List of permissions per group
+        };
+
+        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
+
+        // 4. Return in Universal JSON format { data: { ... } }
         res.json({
-            message: 'Autenticación exitosa',
-            user: user
+            data: {
+                message: 'Autenticación exitosa',
+                user: { ...user, group_permissions: perms },
+                token: token
+            }
         });
 
     } catch (err) {
@@ -87,8 +108,8 @@ exports.createUser = async (req, res) => {
                 name: payload.name,
                 email: payload.email,
                 password_hash: password_hash,
-                role: payload.role,
-                group_ids: payload.group_ids,
+                role: payload.role || 'User',
+                group_ids: payload.group_ids || [],
                 status: payload.status || 'Active',
                 permissions: payload.permissions || []
             }])

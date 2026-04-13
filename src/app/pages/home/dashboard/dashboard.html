@@ -53,18 +53,27 @@
 
     <!-- DATA VISUALIZATIONS -->
     <section class="section mt-5">
-      <h3 class="section-title">Insights</h3>
+      <h3 class="section-title">Insights & Distribution</h3>
       <div class="grid">
-        <div class="col-12 md:col-6 lg:col-4">
+        <!-- Status -->
+        <div class="col-12 lg:col-4">
           <div class="chart-card p-4 shadow-1 border-round-xl bg-white h-full">
-            <h4 class="m-0 mb-3 text-700 font-semibold">Status Distribution</h4>
+            <h4 class="m-0 mb-3 text-700 font-semibold">Global Status</h4>
             <p-chart type="doughnut" [data]="statusChartData" [options]="statusChartOptions" height="250px" />
           </div>
         </div>
-        <div class="col-12 md:col-6 lg:col-8">
+        <!-- Priority -->
+        <div class="col-12 lg:col-4">
           <div class="chart-card p-4 shadow-1 border-round-xl bg-white h-full">
-            <h4 class="m-0 mb-3 text-700 font-semibold">Priority Overview</h4>
+            <h4 class="m-0 mb-3 text-700 font-semibold">Global Priority</h4>
             <p-chart type="bar" [data]="priorityChartData" [options]="priorityChartOptions" height="250px" />
+          </div>
+        </div>
+        <!-- Workspaces -->
+        <div class="col-12 lg:col-4">
+          <div class="chart-card p-4 shadow-1 border-round-xl bg-white h-full">
+            <h4 class="m-0 mb-3 text-700 font-semibold">Tickets by Workspace</h4>
+            <p-chart type="pie" [data]="groupChartData" [options]="statusChartOptions" height="250px" />
           </div>
         </div>
       </div>

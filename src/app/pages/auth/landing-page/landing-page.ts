@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
+import { AuthService } from '../../../services/auth.service';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { TagModule } from 'primeng/tag';
@@ -20,7 +21,12 @@ export class LandingPageComponent {
     { title: 'Analytics',       description: 'Get insights with real-time dashboards.',   icon: 'pi pi-chart-bar',     color: '#0ea5e9' },
   ];
 
-  constructor(private router: Router) {}
+  constructor(private router: Router, private authService: AuthService) {
+    const user = this.authService.getCurrentUser();
+    if (this.authService.getToken() && user && user.id !== '0000') {
+      this.router.navigate(['/home/dashboard']);
+    }
+  }
 
   goToLogin()    { this.router.navigate(['/auth/login']); }
   goToRegister() { this.router.navigate(['/auth/register']); }

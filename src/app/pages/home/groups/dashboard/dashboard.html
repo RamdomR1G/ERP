@@ -6,27 +6,29 @@
       <p-button icon="pi pi-arrow-left" [outlined]="true" severity="secondary" (onClick)="goBack()"></p-button>
       <div>
           <h2 style="margin-bottom: 0.25rem;">{{ groupName }} Dashboard</h2>
-          <!-- FACEPILE (Compact Members) -->
-          <div class="facepile" (click)="membersVisible = true">
-              @for (member of groupMembers.slice(0, 4); track member.id) {
-                  <div class="face-item" [style.background]="member.role === 'Admin' ? '#6366f1' : '#94a3b8'" [pTooltip]="member.name">
-                      {{ member.name.charAt(0) }}
-                  </div>
-              }
-              @if (groupMembers.length > 4) {
-                  <div class="face-more">+{{ groupMembers.length - 4 }}</div>
-              }
-              <span class="team-label">Team Members</span>
+          <div class="facepile-container">
+              <div class="facepile" (click)="membersVisible = true">
+                  @for (member of groupMembers.slice(0, 5); track member.id) {
+                      <div class="face-item" 
+                           [style.background]="member.role === 'Admin' ? 'linear-gradient(135deg, #6366f1, #4338ca)' : 'linear-gradient(135deg, #94a3b8, #64748b)'" 
+                           [pTooltip]="member.name">
+                          {{ member.name.charAt(0).toUpperCase() }}
+                      </div>
+                  }
+                  @if (groupMembers.length > 5) {
+                      <div class="face-more">+{{ groupMembers.length - 5 }}</div>
+                  }
+              </div>
+              <p-button label="Manage Team" [text]="true" icon="pi pi-users" size="small" (onClick)="membersVisible = true"></p-button>
           </div>
       </div>
     </div>
     <div style="display: flex; gap: 1rem;">
-      <p-selectButton [options]="viewOptions" [(ngModel)]="viewMode" optionValue="value" optionLabel="value">
-        <ng-template pTemplate="item" let-item>
-          <i [class]="item.icon"></i>
-        </ng-template>
-      </p-selectButton>
-      <p-button *appHasPermission="'ticket:add'" label="Create Ticket" icon="pi pi-plus" (onClick)="newTicket()"></p-button>
+      <div class="view-toggle-premium">
+          <p-button icon="pi pi-th-large" [severity]="viewMode === 'kanban' ? 'primary' : 'secondary'" [text]="true" (click)="viewMode = 'kanban'" pTooltip="Kanban View" />
+          <p-button icon="pi pi-list" [severity]="viewMode === 'list' ? 'primary' : 'secondary'" [text]="true" (click)="viewMode = 'list'" pTooltip="List View" />
+      </div>
+      <p-button *appHasPermission="'tickets:add'" label="New Ticket" icon="pi pi-plus" (onClick)="newTicket()" styleClass="p-button-raised"></p-button>
     </div>
   </div>
 
@@ -89,167 +91,97 @@
     </p-card>
   </div>
 
-  <!-- GROUP INSIGHTS (CHARTS) -->
-  <div class="charts-row mb-4">
-    <div class="grid">
-      <div class="col-12 md:col-6 lg:col-4">
-        <p-card styleClass="chart-container-card h-full">
-            <h4 class="m-0 mb-3 text-700">Ticket Status</h4>
-            <div style="height: 200px;">
-                <p-chart type="doughnut" [data]="statusChartData" [options]="statusChartOptions" height="100%" />
-            </div>
-        </p-card>
-      </div>
-      <div class="col-12 md:col-6 lg:col-8">
-        <p-card styleClass="chart-container-card h-full">
-            <h4 class="m-0 mb-3 text-700">Priority Distribution</h4>
-            <div style="height: 200px;">
-                <p-chart type="bar" [data]="priorityChartData" [options]="priorityChartOptions" height="100%" />
-            </div>
-        </p-card>
-      </div>
-    </div>
-  </div>
-
-  <!-- FULL MEMBERS DIALOG -->
-  <p-dialog header="Team Members" [(visible)]="membersVisible" [modal]="true" [style]="{ width: '25rem' }">
-    <div class="members-list">
-        @for (member of groupMembers; track member.id) {
-            <div class="member-item">
-                <div class="member-avatar" [style.background]="member.role === 'Admin' ? '#6366f1' : '#94a3b8'">
-                    {{ member.name.charAt(0) }}
-                </div>
-                <div class="member-info">
-                    <span class="name">{{ member.name }}</span>
-                    <span class="role">{{ member.role }}</span>
-                </div>
-                @if (member.id === currentUserId) {
-                    <p-tag value="YOU" severity="info"></p-tag>
-                } @else {
-                    <p-button *appHasPermission="'group:edit'" icon="pi pi-user-minus" [rounded]="true" [text]="true" severity="danger" pTooltip="Remove from group" (onClick)="removeMember(member)"></p-button>
-                }
-            </div>
+  <!-- QUICK FILTERS (MOVED UP) -->
+  <div class="quick-filters-row" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 2rem; margin-bottom: 1.5rem;">
+    <div style="display: flex; gap: 0.5rem;">
+        @for (filter of filters; track filter) {
+          <p-button 
+            [label]="filter" 
+            [outlined]="activeFilter !== filter" 
+            [severity]="activeFilter === filter ? 'primary' : 'secondary'"
+            (onClick)="activeFilter = filter"
+            size="small" />
         }
     </div>
-  </p-dialog>
 
-  <!-- QUICK FILTERS -->
-  <div class="quick-filters-row" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
-    @for (filter of filters; track filter) {
-      <p-button 
-        [label]="filter" 
-        [outlined]="activeFilter !== filter" 
-        [severity]="activeFilter === filter ? 'primary' : 'secondary'"
-        size="small"
-        styleClass="rounded-pill"
-        (onClick)="activeFilter = filter">
-      </p-button>
-    }
+    <p-iconfield iconPosition="left" style="margin-left: auto;">
+        <p-inputicon><i class="pi pi-search"></i></p-inputicon>
+        <input pInputText type="text" 
+               [(ngModel)]="ticketSearchTerm" 
+               placeholder="Search tickets in this group..." 
+               class="p-inputtext-sm" 
+               style="width: 320px;" />
+    </p-iconfield>
   </div>
 
-  <!-- VIEWS (KANBAN or LIST) -->
+  <!-- VIEWS (KANBAN or LIST) (MOVED UP) -->
   @if (viewMode === 'kanban') {
     <!-- KANBAN BOARD -->
     <div class="kanban-board" cdkDropListGroup>
-      <!-- PENDING COLUMN -->
-      <div class="kanban-column">
-        <div class="column-header">
-          <h4>Pending</h4>
-          <p-tag [value]="pendingTickets.length.toString()" severity="info"></p-tag>
-        </div>
-        <div class="column-content" cdkDropList [cdkDropListData]="pendingTickets" (cdkDropListDropped)="drop($event, 'Pending')">
-          @for (ticket of pendingTickets; track ticket.id) {
-            <p-card styleClass="kanban-card" [class.disabled-card]="!hasTicketEditAccess(ticket)" cdkDrag [cdkDragData]="ticket" [cdkDragDisabled]="!hasTicketEditAccess(ticket)" (click)="editTicket(ticket)">
-              <div class="card-top">
-                <span class="ticket-id">#{{ticket.id}}</span>
-                <p-tag [value]="ticket.priority" [severity]="getTicketSeverity(ticket.priority)"></p-tag>
-              </div>
-              <h4 class="ticket-title">{{ticket.title}}</h4>
-              <div class="card-bottom">
-                <span class="assignee"><i class="pi pi-user"></i> {{getUserName(ticket.assigned_to)}}</span>
-                <span class="date" style="font-size: 0.75rem;"><i class="pi pi-calendar"></i> {{ticket.deadline || (ticket.created_on | date:'shortDate')}}</span>
-              </div>
-            </p-card>
-          } @empty {
-            <div class="empty-state">No tickets</div>
-          }
-        </div>
-      </div>
+      
+      <!-- COLUMNS REFACTORED TO PREMIUM -->
+      @for (statusObj of statuses; track statusObj.name) {
+        <div class="kanban-column">
+          <div class="kanban-header">
+            <div class="flex align-items-center gap-2">
+                <div class="status-indicator" [attr.data-status]="statusObj.name"></div>
+                <h3>{{ statusObj.name }}</h3>
+            </div>
+            <span class="count-badge">{{ 
+                (statusObj.name === 'Pending' ? pendingTickets :
+                 statusObj.name === 'In Progress' ? inProgressTickets :
+                 statusObj.name === 'Review' ? reviewTickets : doneTickets).length 
+            }}</span>
+          </div>
 
-      <!-- IN PROGRESS COLUMN -->
-      <div class="kanban-column">
-        <div class="column-header">
-          <h4>In Progress</h4>
-          <p-tag [value]="inProgressTickets.length.toString()" severity="warn"></p-tag>
-        </div>
-        <div class="column-content" cdkDropList [cdkDropListData]="inProgressTickets" (cdkDropListDropped)="drop($event, 'In Progress')">
-          @for (ticket of inProgressTickets; track ticket.id) {
-            <p-card styleClass="kanban-card" [class.disabled-card]="!hasTicketEditAccess(ticket)" cdkDrag [cdkDragData]="ticket" [cdkDragDisabled]="!hasTicketEditAccess(ticket)" (click)="editTicket(ticket)">
-              <div class="card-top">
-                <span class="ticket-id">#{{ticket.id}}</span>
-                <p-tag [value]="ticket.priority" [severity]="getTicketSeverity(ticket.priority)"></p-tag>
+          <div cdkDropList 
+               [id]="statusObj.name"
+               [cdkDropListData]="(statusObj.name === 'Pending' ? pendingTickets :
+                                  statusObj.name === 'In Progress' ? inProgressTickets :
+                                  statusObj.name === 'Review' ? reviewTickets : doneTickets)" 
+               class="kanban-list" 
+               (cdkDropListDropped)="drop($event, statusObj.name)">
+               
+            @for (ticket of (statusObj.name === 'Pending' ? pendingTickets :
+                            statusObj.name === 'In Progress' ? inProgressTickets :
+                            statusObj.name === 'Review' ? reviewTickets : doneTickets); track ticket.id) {
+              
+              <div class="kanban-card" cdkDrag [cdkDragData]="ticket" [cdkDragDisabled]="!hasTicketEditAccess(ticket)" (click)="editTicket(ticket)">
+                <div class="card-priority-bar" [attr.data-priority]="ticket.priority"></div>
+                
+                <div class="card-body">
+                    <div class="card-header-meta">
+                        <span class="ticket-id">#{{ ticket.id }}</span>
+                        <p-tag [value]="ticket.priority" [severity]="getTicketSeverity(ticket.priority)" styleClass="premium-mini-tag" />
+                    </div>
+                    
+                    <h4 class="ticket-title">{{ ticket.title }}</h4>
+                    
+                    <div class="card-footer-luxury">
+                        <div class="user-avatar-tag">
+                            <div class="avatar-circle">
+                                {{ getUserName(ticket.assigned_to).substring(0,1).toUpperCase() }}
+                            </div>
+                            <span class="user-name">{{ getUserName(ticket.assigned_to) }}</span>
+                        </div>
+                        <div class="card-stats" *ngIf="ticket.comments.length">
+                            <i class="pi pi-comments"></i>
+                            <span>{{ ticket.comments.length }}</span>
+                        </div>
+                    </div>
+                </div>
               </div>
-              <h4 class="ticket-title">{{ticket.title}}</h4>
-              <div class="card-bottom">
-                <span class="assignee"><i class="pi pi-user"></i> {{getUserName(ticket.assigned_to)}}</span>
-                <span class="date" style="font-size: 0.75rem;"><i class="pi pi-calendar"></i> {{ticket.deadline || (ticket.created_on | date:'shortDate')}}</span>
-              </div>
-            </p-card>
-          } @empty {
-            <div class="empty-state">No tickets</div>
-          }
-        </div>
-      </div>
 
-      <!-- REVIEW COLUMN -->
-      <div class="kanban-column">
-        <div class="column-header">
-          <h4>Review</h4>
-          <p-tag [value]="reviewTickets.length.toString()" severity="contrast"></p-tag>
-        </div>
-        <div class="column-content" cdkDropList [cdkDropListData]="reviewTickets" (cdkDropListDropped)="drop($event, 'Review')">
-          @for (ticket of reviewTickets; track ticket.id) {
-            <p-card styleClass="kanban-card" [class.disabled-card]="!hasTicketEditAccess(ticket)" cdkDrag [cdkDragData]="ticket" [cdkDragDisabled]="!hasTicketEditAccess(ticket)" (click)="editTicket(ticket)">
-              <div class="card-top">
-                <span class="ticket-id">#{{ticket.id}}</span>
-                <p-tag [value]="ticket.priority" [severity]="getTicketSeverity(ticket.priority)"></p-tag>
+            } @empty {
+              <div class="column-empty">
+                <i class="pi pi-inbox"></i>
+                <p>No tickets</p>
               </div>
-              <h4 class="ticket-title">{{ticket.title}}</h4>
-              <div class="card-bottom">
-                <span class="assignee"><i class="pi pi-user"></i> {{getUserName(ticket.assigned_to)}}</span>
-                <span class="date" style="font-size: 0.75rem;"><i class="pi pi-calendar"></i> {{ticket.deadline || (ticket.created_on | date:'shortDate')}}</span>
-              </div>
-            </p-card>
-          } @empty {
-            <div class="empty-state">No tickets</div>
-          }
+            }
+          </div>
         </div>
-      </div>
+      }
 
-      <!-- DONE COLUMN -->
-      <div class="kanban-column">
-        <div class="column-header">
-          <h4>Done</h4>
-          <p-tag [value]="doneTickets.length.toString()" severity="success"></p-tag>
-        </div>
-        <div class="column-content" cdkDropList [cdkDropListData]="doneTickets" (cdkDropListDropped)="drop($event, 'Done')">
-          @for (ticket of doneTickets; track ticket.id) {
-            <p-card styleClass="kanban-card" [class.disabled-card]="!hasTicketEditAccess(ticket)" cdkDrag [cdkDragData]="ticket" [cdkDragDisabled]="!hasTicketEditAccess(ticket)" (click)="editTicket(ticket)">
-              <div class="card-top">
-                <span class="ticket-id">#{{ticket.id}}</span>
-                <p-tag [value]="ticket.priority" [severity]="getTicketSeverity(ticket.priority)"></p-tag>
-              </div>
-              <h4 class="ticket-title">{{ticket.title}}</h4>
-              <div class="card-bottom">
-                <span class="assignee"><i class="pi pi-user"></i> {{getUserName(ticket.assigned_to)}}</span>
-                <span class="date" style="font-size: 0.75rem;"><i class="pi pi-calendar"></i> {{ticket.deadline || (ticket.created_on | date:'shortDate')}}</span>
-              </div>
-            </p-card>
-          } @empty {
-            <div class="empty-state">No tickets</div>
-          }
-        </div>
-      </div>
     </div>
   } @else {
     <!-- LIST VIEW BOARD -->
@@ -301,6 +233,65 @@
       </p-table>
     </div>
   }
+
+  <!-- GROUP INSIGHTS (CHARTS) (MOVED DOWN) -->
+  <div class="charts-row mt-6 mb-4">
+    <div class="grid">
+      <div class="col-12 md:col-6 lg:col-4">
+        <p-card styleClass="chart-container-card h-full">
+            <h4 class="m-0 mb-3 text-700">Ticket Status</h4>
+            <div style="height: 200px;">
+                <p-chart type="doughnut" [data]="statusChartData" [options]="statusChartOptions" height="100%" />
+            </div>
+        </p-card>
+      </div>
+      <div class="col-12 md:col-6 lg:col-8">
+        <p-card styleClass="chart-container-card h-full">
+            <h4 class="m-0 mb-3 text-700">Priority Distribution</h4>
+            <div style="height: 200px;">
+                <p-chart type="bar" [data]="priorityChartData" [options]="priorityChartOptions" height="100%" />
+            </div>
+        </p-card>
+      </div>
+    </div>
+  </div>
+
+  <!-- TEAM MANAGEMENT MODAL (HUB) (MOVED OUT OF FLOW) -->
+  <p-dialog header="Team Management Hub" [(visible)]="membersVisible" [modal]="true" [style]="{ width: '40rem' }" styleClass="team-hub-modal">
+    <div class="hub-container">
+        <div class="members-grid-premium">
+            <div *ngFor="let member of groupMembers" class="member-card-premium" [class.is-admin]="member.role === 'Admin'">
+                <div class="member-avatar-large" [style.background]="member.role === 'Admin' ? 'linear-gradient(135deg, #6366f1, #4338ca)' : 'linear-gradient(135deg, #e2e8f0, #cbd5e1)'">
+                    {{ member.name ? member.name.charAt(0).toUpperCase() : '?' }}
+                    <i class="pi pi-shield role-icon" *ngIf="member.role === 'Admin'"></i>
+                </div>
+                
+                <div class="member-details">
+                    <span class="member-name">{{ member.name }}</span>
+                    <div class="member-role-badge">
+                        <span class="dot"></span>
+                        {{ member.role || 'Member' }}
+                    </div>
+                </div>
+
+                <div class="member-actions">
+                    <div *ngIf="member.id === currentUserId">
+                         <p-tag value="YOU" severity="info" [rounded]="true"></p-tag>
+                    </div>
+                    <div *ngIf="member.id !== currentUserId">
+                         <p-button *appHasPermission="'group:edit'" 
+                                  icon="pi pi-user-minus" 
+                                  [rounded]="true" 
+                                  [text]="true" 
+                                  severity="danger" 
+                                  pTooltip="Remove from team" 
+                                  (onClick)="removeMember(member)"></p-button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+  </p-dialog>
 
   <!-- RECENT TICKETS -->
   <div class="recent-section">

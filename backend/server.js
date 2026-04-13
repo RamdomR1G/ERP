@@ -6,6 +6,9 @@ const userRoutes = require('./routes/user.routes');
 const groupRoutes = require('./routes/group.routes');
 const ticketRoutes = require('./routes/ticket.routes');
 const permissionRoutes = require('./routes/permission.routes');
+const authRoutes = require('./routes/auth.routes');
+const apiLimiter = require('./middlewares/rateLimit');
+const apiMetrics = require('./middlewares/metrics');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,11 +17,16 @@ const PORT = process.env.PORT || 3000;
 app.use(cors()); // Allow Angular frontend
 app.use(express.json()); // JSON parsing
 
+// Aplicar Métricas y Rate Limiting global
+app.use(apiMetrics);
+app.use('/api', apiLimiter);
+
 // Rutas
 app.use('/api/users', userRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/permissions', permissionRoutes);
+app.use('/api/auth', authRoutes);
 
 // Manejo de Error 404
 app.use((req, res) => {

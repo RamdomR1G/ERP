@@ -24,9 +24,9 @@ export class Sidebar implements OnInit {
 
   menuItems = [
     { label: 'Dashboard', icon: 'pi pi-home', route: '/home/dashboard', requiredPermission: null, requiresGroup: false },
-    { label: 'Tickets', icon: 'pi pi-ticket', route: '/home/tickets', requiredPermission: 'ticket:view', requiresGroup: false },
-    { label: 'Users', icon: 'pi pi-user', route: '/home/users', requiredPermission: 'users:view', requiresGroup: false },
-    { label: 'Groups', icon: 'pi pi-users', route: '/home/groups', requiredPermission: 'group:view', requiresGroup: false },
+    { label: 'Tickets', icon: 'pi pi-ticket', route: '/home/tickets', requiredPermission: 'tickets:view', requiresGroup: false },
+    { label: 'Admin', icon: 'pi pi-cog', route: '/home/admin', requiredPermission: 'ADMIN_CHECK', requiresGroup: false },
+    { label: 'Profile', icon: 'pi pi-user', route: '/home/profile', requiredPermission: null, requiresGroup: false },
   ];
 
   canShowMenuItem(item: any): boolean {
@@ -38,7 +38,21 @@ export class Sidebar implements OnInit {
     }
 
     if (!item.requiredPermission) return true; // public
+    
+    // Check especial para Admin (necesita users:manage O groups:manage o ser Admin real)
+    if (item.requiredPermission === 'ADMIN_CHECK') {
+        return this.authService.hasPermission('users:manage', true) || 
+               this.authService.hasPermission('groups:manage', true) ||
+               this.authService.hasPermission('*', true);
+    }
+
     return this.authService.hasPermission(item.requiredPermission, true);
+  }
+
+  onLogout() {
+    if (confirm('Are you sure you want to sign out?')) {
+        this.authService.logout();
+    }
   }
 
   navigate(route: string) {

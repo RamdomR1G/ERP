@@ -73,8 +73,22 @@ const LoginUserSchema = {
   additionalProperties: false
 };
 
+const RegisterUserSchema = {
+  $schema: "http://json-schema.org/draft-07/schema#",
+  title: "RegisterUserSchema",
+  type: "object",
+  properties: {
+    name: { type: "string", minLength: 3 },
+    email: { type: "string", format: "email" },
+    password: { type: "string", minLength: 8 }
+  },
+  required: ["name", "email", "password"],
+  additionalProperties: false
+};
+
 module.exports = {
     CreateUserSchema,
     UpdateUserSchema,
-    LoginUserSchema
+    LoginUserSchema,
+    RegisterUserSchema
 };

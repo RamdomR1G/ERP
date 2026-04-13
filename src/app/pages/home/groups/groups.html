@@ -42,7 +42,7 @@
   <div class="groups-wrapper">
     <div class="tab-header">
       <span class="tab-subtitle">All user groups</span>
-      <p-button *appHasPermission="'group:add'" label="New Group" icon="pi pi-plus" severity="secondary" (onClick)="newGroup()" />
+      <p-button *appHasPermission="'groups:add'" label="New Group" icon="pi pi-plus" severity="secondary" (onClick)="newGroup()" />
     </div>
     <div class="groups-grid">
       @for (group of groups; track group.id) {
@@ -60,8 +60,8 @@
           <div class="group-actions" style="display: flex; gap: 0.5rem; justify-content: flex-end; width: 100%;">
             <p-button label="View Dashboard" [outlined]="true" size="small" (onClick)="goToDashboard(group.id)" styleClass="mr-auto"></p-button>
             <div>
-              <p-button *appHasPermission="'group:edit'" icon="pi pi-pencil" [text]="true" severity="info" size="small" (onClick)="editGroup(group)"></p-button>
-              <p-button *appHasPermission="'group:delete'" icon="pi pi-trash" [text]="true" severity="danger" size="small" (onClick)="confirmDeleteGroup(group)"></p-button>
+              <p-button *appHasPermission="'groups:edit'" icon="pi pi-pencil" [text]="true" severity="info" size="small" (onClick)="editGroup(group)"></p-button>
+              <p-button *appHasPermission="'groups:delete'" icon="pi pi-trash" [text]="true" severity="danger" size="small" (onClick)="confirmDeleteGroup(group)"></p-button>
             </div>
           </div>
         </div>

@@ -33,8 +33,12 @@ exports.getGroupById = async (req, res) => {
 
 exports.createGroup = async (req, res) => {
     try {
+        console.log('[GroupController] Creating group:', req.body);
         const { data, error } = await supabase.from('groups').insert([req.body]).select('id').single();
-        if (error) throw error;
+        if (error) {
+            console.error('[GroupController] Create Error:', error);
+            throw error;
+        }
         res.status(201).json({ message: 'Created', id: data.id });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
@@ -42,11 +46,20 @@ exports.createGroup = async (req, res) => {
 exports.updateGroup = async (req, res) => {
     try {
         const { id } = req.params;
+        console.log(`[GroupController] Updating group ${id}:`, req.body);
         const { data, error } = await supabase.from('groups').update(req.body).eq('id', id).select('id');
-        if (error) throw error;
-        if (data.length === 0) return res.status(404).json({ error: 'Not found' });
+        
+        if (error) {
+            console.error('[GroupController] Update Error:', error);
+            throw error;
+        }
+        
+        if (!data || data.length === 0) return res.status(404).json({ error: 'Not found' });
         res.json({ message: 'Updated' });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+    } catch (err) { 
+        console.error('[GroupController] 500 Error:', err.message);
+        res.status(500).json({ error: err.message }); 
+    }
 };
 
 exports.deleteGroup = async (req, res) => {
