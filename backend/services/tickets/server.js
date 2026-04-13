@@ -13,18 +13,26 @@ const getTicketsHandler = async (request, reply) => {
     const { group_id } = request.query;
     const user_id = request.headers['x-user-id'];
     const role = request.headers['x-user-role'];
+    const userGroupsString = request.headers['x-user-groups'] || '[]';
+
+    if (!user_id || !role) return reply.status(401).send({ error: 'Identity headers missing' });
+
     let query = supabase.from('tickets').select('*, assigned_user:users!assigned_to(name), creator:users!created_by(name)');
-    if (group_id) query = query.eq('group_id', group_id);
-    if (role !== 'Admin') {
-        const userGroupsString = request.headers['x-user-groups'] || '[]';
+    
+    // Admin sees everything (can filter by group_id)
+    if (role === 'Admin') {
+        if (group_id) query = query.eq('group_id', group_id);
+    } 
+    // Regular users: isolation
+    else {
         let userGroups = [];
         try { userGroups = JSON.parse(userGroupsString); } catch (e) {}
-        if (user_id) {
-            if (Array.isArray(userGroups) && userGroups.length > 0) {
-                query = query.or(`group_id.in.(${userGroups.join(',')}),assigned_to.eq.${user_id},created_by.eq.${user_id}`);
-            } else {
-                query = query.or(`assigned_to.eq.${user_id},created_by.eq.${user_id}`);
-            }
+
+        if (Array.isArray(userGroups) && userGroups.length > 0) {
+            query = query.or(`group_id.in.(${userGroups.join(',')}),assigned_to.eq.${user_id},created_by.eq.${user_id}`);
+        } else {
+            // NO GROUPS -> Only see tickets directly assigned or created
+            query = query.or(`assigned_to.eq.${user_id},created_by.eq.${user_id}`);
         }
     }
     const { data, error } = await query;

@@ -39,6 +39,11 @@ fastify.addHook('onRequest', async (request, reply) => {
     try {
         const decoded = await request.jwtVerify();
         
+        // PROPAGATE IDENTITY: Inject headers for microservices
+        request.headers['x-user-id'] = decoded.id;
+        request.headers['x-user-role'] = decoded.role;
+        request.headers['x-user-groups'] = JSON.stringify(decoded.group_ids || []);
+        
         // VALIDACION DE PERMISOS (PBAC)
         const method = request.method;
         const path = request.url.split('?')[0];

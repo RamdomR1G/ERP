@@ -10,15 +10,20 @@ fastify.register(cors);
 
 // ROUTES (Redundant roots to handle Gateway variations)
 const getGroupsHandler = async (request, reply) => {
-    const { user_id, role } = request.query;
+    const user_id = request.headers['x-user-id'];
+    const role = request.headers['x-user-role'];
+
+    if (!user_id || !role) return reply.status(401).send({ error: 'Identity headers missing' });
+
     let query = supabase.from('groups').select('*');
 
     // ISOLATION: If not Admin, filter by user allowed group_ids
-    if (role !== 'Admin' && user_id) {
+    if (role !== 'Admin') {
         const { data: user } = await supabase.from('users').select('group_ids').eq('id', user_id).single();
-        if (user && Array.isArray(user.group_ids)) {
+        if (user && Array.isArray(user.group_ids) && user.group_ids.length > 0) {
             query = query.in('id', user.group_ids);
         } else {
+            // NO GROUPS ASSIGNED -> SHUTDOWN DATA
             return { statusCode: 200, intOpCode: 'SxGR200', data: [] }; 
         }
     }

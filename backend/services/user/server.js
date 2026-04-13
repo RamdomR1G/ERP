@@ -27,7 +27,13 @@ const loginHandler = async (request, reply) => {
     delete user.password_hash;
 
     const token = jwt.sign(
-        { id: user.id, email: user.email, role: user.role, group_permissions: user.group_permissions }, 
+        { 
+            id: user.id, 
+            email: user.email, 
+            role: user.role, 
+            group_ids: user.group_ids || [], 
+            group_permissions: user.group_permissions 
+        }, 
         (process.env.JWT_SECRET || 'fallback_secret_not_recommended').trim(), 
         { expiresIn: '8h' }
     );
@@ -55,12 +61,26 @@ fastify.post('/auth/register', registerHandler);
 const getUsersHandler = async (request, reply) => {
     const user_id = request.headers['x-user-id'];
     const role = request.headers['x-user-role'];
-    let query = supabase.from('users').select('id, name, email, role, group_ids, group_permissions, status, joined_date, permissions');
-    if (role !== 'Admin' && user_id) {
-        const { data: currentUser } = await supabase.from('users').select('group_ids').eq('id', user_id).single();
-        if (currentUser && Array.isArray(currentUser.group_ids) && currentUser.group_ids.length > 0) {
-             query = query.ov('group_ids', currentUser.group_ids);
+    const userGroupsString = request.headers['x-user-groups'] || '[]';
+
+    if (!user_id || !role) return reply.status(401).send({ error: 'Identity headers missing' });
+
+    let query = supabase.from('users').select('id, name, email, role, group_ids, status, joined_date, permissions');
+
+    // Admin sees all
+    if (role === 'Admin') {
+        // No extra filtering
+    } 
+    // Regular users: see self + group mates
+    else {
+        let userGroups = [];
+        try { userGroups = JSON.parse(userGroupsString); } catch (e) {}
+
+        if (Array.isArray(userGroups) && userGroups.length > 0) {
+             // Overlap groups OR it's me
+             query = query.or(`group_ids.ov.{${userGroups.join(',')}},id.eq.${user_id}`);
         } else {
+             // NO GROUPS -> Only see self
              query = query.eq('id', user_id);
         }
     }
