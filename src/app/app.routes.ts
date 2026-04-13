@@ -35,13 +35,13 @@ export const routes: Routes = [
         path: 'groups', 
         loadComponent: () => import('./pages/home/groups/groups').then(m => m.GroupsComponent),
         canActivate: [authGuard],
-        data: { requiredPermission: 'groups:view' }
+        data: { requiredPermission: 'group:view' }
       },
       { 
         path: 'tickets', 
         loadComponent: () => import('./pages/home/tickets/tickets').then(m => m.TicketsComponent),
         canActivate: [authGuard],
-        data: { requiredPermission: 'tickets:view' }
+        data: { requiredPermission: 'ticket:view' }
       },
       {
         path: 'profile',
@@ -51,13 +51,13 @@ export const routes: Routes = [
         path: 'groups/:id/dashboard',
         loadComponent: () => import('./pages/home/groups/dashboard/dashboard').then(m => m.GroupDashboardComponent),
         canActivate: [authGuard],
-        data: { requiredPermission: 'groups:view' }
+        data: { requiredPermission: 'group:view' }
       },
       {
         path: 'groups/:id/settings',
         loadComponent: () => import('./pages/home/groups/settings/settings').then(m => m.GroupSettingsComponent),
         canActivate: [authGuard],
-        data: { requiredPermission: 'groups:edit' }
+        data: { requiredPermission: 'group:edit' }
       }
     ]
   },

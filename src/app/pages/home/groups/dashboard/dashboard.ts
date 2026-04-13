@@ -13,6 +13,7 @@ import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { TooltipModule } from 'primeng/tooltip';
 import { ChartModule } from 'primeng/chart';
+import { DividerModule } from 'primeng/divider';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
 import { AuthService, AppUser } from '../../../../services/auth.service';
@@ -39,7 +40,8 @@ import { HasPermissionDirective } from '../../../../directives/has-permission.di
     InputIconModule, 
     TooltipModule, 
     HasPermissionDirective, 
-    ChartModule
+    ChartModule,
+    DividerModule
   ],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css'
@@ -351,23 +353,23 @@ export class GroupDashboardComponent implements OnInit {
 
   canEditFull(): boolean {
     if (!this.editingTicketRef) return true; // new ticket mode
-    if (this.authService.hasPermission('tickets:edit')) return true; // admins can do everything
+    if (this.authService.hasPermission('ticket:edit')) return true; // admins can do everything
     return this.currentUserId === this.editingTicketRef.created_by;
   }
 
   canEditPartial(): boolean {
     if (!this.editingTicketRef) return false;
-    if (this.authService.hasPermission('tickets:edit')) return true;
-    return this.currentUserId === this.editingTicketRef.assigned_to && this.authService.hasPermission('tickets:move');
+    if (this.authService.hasPermission('ticket:edit')) return true;
+    return this.currentUserId === this.editingTicketRef.assigned_to && this.authService.hasPermission('ticket:edit_state');
   }
 
   hasTicketEditAccess(ticket: Ticket): boolean {
     // Admin override
-    if (this.authService.hasPermission('tickets:edit')) return true;
+    if (this.authService.hasPermission('ticket:edit')) return true;
     
     // Regular dynamic rule: Assigned To Me AND has move permission
     const isAssigned = this.currentUserId === ticket.assigned_to;
-    const canMove = this.authService.hasPermission('tickets:move');
+    const canMove = this.authService.hasPermission('ticket:edit_state');
     
     return isAssigned && canMove;
   }

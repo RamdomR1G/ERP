@@ -411,3 +411,182 @@
     border: 1px solid #e2e8f0;
 }
 
+/* ── TICKET DETAIL MODAL (Synced with Tickets Component) ── */
+.ticket-detail-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+  padding-top: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .ticket-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.detail-main {
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-sidebar {
+  background: #f8fafc;
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+.field label {
+  font-weight: 600;
+  color: #334155;
+  font-size: 0.9rem;
+}
+
+.custom-textarea {
+  padding: 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #1e293b;
+  font-family: inherit;
+  font-size: 1rem;
+  resize: vertical;
+  transition: border-color 0.2s;
+  min-height: 100px;
+}
+
+.custom-textarea:focus {
+    border-color: #6366f1;
+    outline: none;
+}
+
+.field-readonly {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+}
+.field-readonly .label {
+  color: #64748b;
+  font-weight: 600;
+}
+.field-readonly .value {
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.comments-section h4, .history-section h4 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.comment-item {
+  background: #f1f5f9;
+  padding: 1rem;
+  border-radius: 12px;
+  border-bottom-left-radius: 2px;
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+}
+
+.comment-author {
+  font-weight: 700;
+  color: #1e293b;
+  font-size: 0.85rem;
+}
+
+.comment-date {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.comment-text {
+  font-size: 0.9rem;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-height: 250px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+  padding-left: 0.5rem;
+}
+
+.history-item {
+  position: relative;
+  font-size: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  border-left: 2px solid #e2e8f0;
+  padding-left: 1.25rem;
+  padding-bottom: 0.5rem;
+}
+
+.history-item::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #6366f1;
+  box-shadow: 0 0 0 3px #eef2ff;
+}
+
+.history-item:last-child {
+  border-left-color: transparent;
+}
+
+.history-date {
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.history-action {
+  color: #1e293b;
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
+.empty-state-small {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  font-style: italic;
+  padding: 1rem 0;
+  text-align: center;
+}
+

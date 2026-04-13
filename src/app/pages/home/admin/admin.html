@@ -29,19 +29,19 @@
   <div class="tabs-premium-container">
     <p-tabs value="0">
       <p-tablist class="custom-tablist">
-        <p-tab value="0" *appHasPermission="'users:manage'"><i class="pi pi-users mr-2"></i> Members</p-tab>
-        <p-tab value="1" *appHasPermission="'groups:manage'"><i class="pi pi-briefcase mr-2"></i> Workspaces</p-tab>
+        <p-tab value="0" *appHasPermission="'user:manage'"><i class="pi pi-users mr-2"></i> Members</p-tab>
+        <p-tab value="1" *appHasPermission="'group:manage'"><i class="pi pi-briefcase mr-2"></i> Workspaces</p-tab>
       </p-tablist>
 
       <p-tabpanels>
         <!-- USERS TAB (REFINED) -->
-        <p-tabpanel value="0" *appHasPermission="'users:manage'">
+        <p-tabpanel value="0" *appHasPermission="'user:manage'">
           <div class="tab-header-premium">
             <div class="flex flex-column">
                 <h3 class="m-0 text-lg font-bold">Workspace Members</h3>
                 <p class="text-xs text-500 m-0">Directory of all users and their contextual permissions.</p>
             </div>
-            <p-button *appHasPermission="'users:manage'" label="Invite Member" icon="pi pi-plus" severity="primary" [rounded]="true" size="small" (onClick)="newUser()" />
+            <p-button *appHasPermission="'user:manage'" label="Invite Member" icon="pi pi-plus" severity="primary" [rounded]="true" size="small" (onClick)="newUser()" />
           </div>
           
           <p-table [value]="users" [paginator]="true" [rows]="10" styleClass="p-datatable-sm p-datatable-highlight" [rowHover]="true">
@@ -76,8 +76,8 @@
                 <td><p-tag [value]="user.status" [severity]="getUserSeverity(user.status)" [rounded]="true" /></td>
                 <td class="text-right">
                   <div class="flex justify-content-end gap-1">
-                      <p-button *appHasPermission="'users:edit'" icon="pi pi-shield" [text]="true" severity="info" size="small" (onClick)="editUser(user)" pTooltip="Security Settings" />
-                      <p-button *appHasPermission="'users:delete'" icon="pi pi-trash" [text]="true" severity="danger" size="small" (onClick)="deleteUser(user)" />
+                      <p-button *appHasPermission="'user:edit'" icon="pi pi-shield" [text]="true" severity="info" size="small" (onClick)="editUser(user)" pTooltip="Security Settings" />
+                      <p-button *appHasPermission="'user:delete'" icon="pi pi-trash" [text]="true" severity="danger" size="small" (onClick)="deleteUser(user)" />
                   </div>
                 </td>
               </tr>
@@ -86,13 +86,13 @@
         </p-tabpanel>
 
         <!-- GROUPS TAB (REFINED TABLE VIEW) -->
-        <p-tabpanel value="1" *appHasPermission="'groups:manage'">
+        <p-tabpanel value="1" *appHasPermission="'group:manage'">
           <div class="tab-header-premium">
             <div class="flex flex-column">
                 <h3 class="m-0 text-lg font-bold">Organizational Workspaces</h3>
                 <p class="text-xs text-500 m-0">Centralized control of all enterprise context and security groups.</p>
             </div>
-            <p-button *appHasPermission="'groups:manage'" label="New Workspace" icon="pi pi-plus-circle" severity="secondary" [rounded]="true" size="small" (onClick)="newGroup()" />
+            <p-button *appHasPermission="'group:manage'" label="New Workspace" icon="pi pi-plus-circle" severity="secondary" [rounded]="true" size="small" (onClick)="newGroup()" />
           </div>
           
           <p-table [value]="groups" [paginator]="true" [rows]="10" styleClass="p-datatable-sm p-datatable-highlight" [rowHover]="true">
@@ -124,8 +124,8 @@
                 </td>
                 <td class="text-right">
                   <div class="flex justify-content-end gap-1">
-                      <p-button *appHasPermission="'groups:edit'" icon="pi pi-cog" [text]="true" severity="info" size="small" (onClick)="editGroup(group)" pTooltip="Settings" />
-                      <p-button *appHasPermission="'groups:delete'" icon="pi pi-trash" [text]="true" severity="danger" size="small" (onClick)="deleteGroup(group)" />
+                      <p-button *appHasPermission="'group:edit'" icon="pi pi-cog" [text]="true" severity="info" size="small" (onClick)="editGroup(group)" pTooltip="Settings" />
+                      <p-button *appHasPermission="'group:delete'" icon="pi pi-trash" [text]="true" severity="danger" size="small" (onClick)="deleteGroup(group)" />
                   </div>
                 </td>
               </tr>
@@ -136,143 +136,138 @@
     </p-tabs>
   </div>
 
-  <!-- USER DIALOG (Split Layout: Identity vs Security) -->
+  <!-- USER DIALOG (Synced with Premium Design) -->
   <p-dialog [(visible)]="userVisible" [header]="selectedUser.id ? 'Identity & Security Settings' : 'New Enterprise Member'" 
-            [modal]="true" [style]="{ width: '950px' }" styleClass="p-fluid premium-modal">
+            [modal]="true" [style]="{ width: '60rem' }" styleClass="ticket-detail-modal">
     
-    <div class="grid m-0">
-        <!-- LEFT COLUMN: IDENTITY & ROLES -->
-        <div class="col-12 md:col-6 p-5">
+    <div class="ticket-detail-grid" *ngIf="selectedUser">
+        <!-- MAIN / LEFT COLUMN: IDENTITY -->
+        <div class="detail-main">
             <div class="section-label mb-4">Member Identity</div>
             
-            <!-- IDENTITY GRID 2x2 (Forced Horizontal) -->
-            <div style="display: flex; flex-direction: column; gap: 10px;" class="mt-3">
-                <!-- ROW 1 -->
-                <div style="display: flex; gap: 20px;">
-                    <div style="flex: 1 1 60%;" class="p-field">
-                        <label for="name">Full Name</label>
-                        <input pInputText id="name" [(ngModel)]="selectedUser.name" placeholder="John Doe" required />
-                    </div>
-                    <div style="flex: 1 1 40%;" class="p-field">
-                        <label>Org Role</label>
-                        <p-select [options]="availableRoles" [(ngModel)]="selectedUser.role" optionLabel="label" optionValue="value" appendTo="body" />
-                    </div>
-                </div>
+            <div class="field">
+                <label for="name">Full Name</label>
+                <input pInputText id="name" [(ngModel)]="selectedUser.name" placeholder="John Doe" required />
+            </div>
 
-                <!-- ROW 2 -->
-                <div style="display: flex; gap: 20px;">
-                    <div style="flex: 1 1 60%;" class="p-field">
-                        <label for="email">Email Address</label>
-                        <input pInputText id="email" [(ngModel)]="selectedUser.email" placeholder="john@enterprise.com" required />
-                    </div>
-                    <div style="flex: 1 1 40%;" class="p-field">
-                        <label>Account Status</label>
-                        <p-select [options]="availableStatuses" [(ngModel)]="selectedUser.status" optionLabel="label" optionValue="value" appendTo="body" />
-                    </div>
-                </div>
+            <div class="field">
+                <label for="email">Email Address</label>
+                <input pInputText id="email" [(ngModel)]="selectedUser.email" placeholder="john@enterprise.com" required />
+            </div>
+
+            <div class="field" *ngIf="!selectedUser.id">
+                <label for="pass">Temporary Password</label>
+                <input pInputText id="pass" type="password" [(ngModel)]="selectedUser.password" placeholder="••••••••" />
+            </div>
+
+            <div class="field mt-2">
+                <label>Account Status</label>
+                <p-select [options]="availableStatuses" [(ngModel)]="selectedUser.status" optionLabel="label" optionValue="value" appendTo="body" />
             </div>
 
             <div class="workspace-assignment-box mt-4 p-4 border-round-xl bg-gray-50 border-1 border-gray-100">
-                <div class="section-label mb-4">Workspace Access Level</div>
+                <div class="section-label mb-3">Workspace Access Level</div>
                 <p-multiSelect [options]="groups" [(ngModel)]="selectedUser.group_ids" optionLabel="name" optionValue="id" 
                                placeholder="Select accessible workspaces" appendTo="body" [maxSelectedLabels]="2" />
-                <p class="text-xs text-500 mt-3 italic">Permissions update in real-time on the right security panel.</p>
+                <p class="text-xs text-500 mt-2 italic">Assign workspaces to unlock granular permissions on the right.</p>
             </div>
         </div>
         
-        <!-- RIGHT COLUMN: PBAC SECURITY MATRIX (Cleaned) -->
-        <div class="col-12 md:col-6 p-5 bg-faint border-left-light">
+        <!-- SIDEBAR / RIGHT COLUMN: PBAC SECURITY -->
+        <div class="detail-sidebar pb-4">
             <div class="flex align-items-center justify-content-between mb-4">
-                <div class="flex flex-column gap-1">
-                    <div class="section-label">Security Access Matrix</div>
-                    <p class="text-xs text-500 m-0">Define what this user can do within each assigned workspace.</p>
-                </div>
-                <div class="security-badge p-2 border-round-circle bg-primary-faded">
-                    <i class="pi pi-lock text-primary" style="font-size: 1.1rem;"></i>
-                </div>
+                <div class="section-label w-full">Security Matrix</div>
             </div>
 
-            @if (selectedUser.group_ids && selectedUser.group_ids.length > 0) {
-                <!-- PREMIUM PBAC GRID -->
-                <div class="pbac-matrix-clean pr-2" style="display: flex; flex-wrap: wrap; gap: 1.5rem;">
-                    @for (groupId of selectedUser.group_ids; track groupId) {
-                        <div class="pbac-context-row" style="flex: 1 1 calc(50% - 1rem); min-width: 250px;">
-                            <div class="flex align-items-center justify-content-between mb-3 pb-2 border-bottom-1 border-gray-100">
-                                <div class="flex align-items-center gap-2">
+            <div class="field mb-4">
+                <label>System Role</label>
+                <p-select [options]="availableRoles" [(ngModel)]="selectedUser.role" optionLabel="label" optionValue="value" appendTo="body" />
+            </div>
+
+            <p-divider></p-divider>
+
+            <div class="security-access-scroller mt-4">
+                @if (selectedUser.group_ids && selectedUser.group_ids.length > 0) {
+                    <div class="flex flex-column gap-3">
+                        @for (groupId of selectedUser.group_ids; track groupId) {
+                            <div class="pbac-context-row-mini">
+                                <div class="flex align-items-center gap-2 mb-2">
                                     <div class="group-dot" [style.color]="getGroupColor(groupId)" [style.background-color]="getGroupColor(groupId)"></div>
-                                    <span class="text-xs font-bold text-700 uppercase" style="letter-spacing: 0.05em;">{{ getGroupName(groupId) }}</span>
+                                    <span class="text-xs font-bold text-700 uppercase">{{ getGroupName(groupId) }}</span>
                                 </div>
-                                <i class="pi pi-shield text-xs opacity-30"></i>
+                                <p-multiSelect [options]="allPermissions" 
+                                               [ngModel]="getGroupPerms(groupId)"
+                                               (ngModelChange)="updateGroupPerms(groupId, $event)"
+                                               placeholder="Set access"
+                                               appendTo="body"
+                                               display="chip"
+                                               styleClass="p-multiselect-sm" />
                             </div>
-                            <p-multiSelect [options]="allPermissions" 
-                                           [ngModel]="getGroupPerms(groupId)"
-                                           (ngModelChange)="updateGroupPerms(groupId, $event)"
-                                           placeholder="Set context access"
-                                           appendTo="body"
-                                           styleClass="pbac-select"
-                                           display="chip" />
-                        </div>
-                    }
-                </div>
-            } @else {
-                <div class="flex flex-column align-items-center justify-content-center h-full opacity-40 py-8">
-                    <div class="empty-security-box p-4 border-round-circle mb-3">
-                        <i class="pi pi-shield-off" style="font-size: 2rem;"></i>
+                        }
                     </div>
-                    <div class="text-center">
-                        <h4 class="m-0 text-700 font-bold">Security Context Empty</h4>
-                        <p class="text-xs text-500 mt-1">Assign workspaces to unlock permissions.</p>
+                } @else {
+                    <div class="flex flex-column align-items-center justify-content-center py-6 opacity-40">
+                        <i class="pi pi-shield-off mb-2" style="font-size: 1.5rem;"></i>
+                        <span class="text-xs font-bold">No contexts selected</span>
                     </div>
-                </div>
-            }
+                }
+            </div>
         </div>
     </div>
 
     <ng-template pTemplate="footer">
-      <p-button label="Discard" [text]="true" (click)="userVisible = false" />
-      <p-button label="Save Identity & PBAC" icon="pi pi-check-circle" (click)="saveUser()" [disabled]="!selectedUser.name || !selectedUser.email" [rounded]="true" />
+      <p-button label="Discard" severity="secondary" [outlined]="true" (onClick)="userVisible = false" />
+      <p-button [label]="selectedUser.id ? 'Save Identity & PBAC' : 'Create Member'" icon="pi pi-check" (onClick)="saveUser()" [disabled]="!selectedUser.name || !selectedUser.email" />
     </ng-template>
   </p-dialog>
 
-  <!-- GROUP DIALOG -->
+  <!-- GROUP DIALOG (Synced with Premium Design) -->
   <p-dialog [(visible)]="groupVisible" [header]="selectedGroup.id ? 'Modify Workspace' : 'Create New Workspace'" 
-            [modal]="true" [style]="{ width: '450px' }" styleClass="p-fluid">
-    <div class="p-field mb-3">
-      <label for="gname" class="font-bold block mb-2">Workspace Name</label>
-      <input pInputText id="gname" [(ngModel)]="selectedGroup.name" required />
-    </div>
-    <div class="p-field mb-4">
-      <label for="gdesc" class="font-bold block mb-2 text-sm text-600">Workspace Description</label>
-      <textarea pInputTextarea id="gdesc" [(ngModel)]="selectedGroup.description" rows="3" placeholder="Explain the purpose of this security context..."></textarea>
-    </div>
-
-    <div class="grid m-0">
-        <div class="col-8 p-0 pr-3 p-field">
-            <label class="font-bold block mb-2 text-sm text-600">Visual Icon</label>
-            <p-select [options]="availableIcons" [(ngModel)]="selectedGroup.icon" optionLabel="label" optionValue="value" appendTo="body">
-                <ng-template pTemplate="selectedItem" let-selectedOption>
-                    <div class="flex align-items-center gap-2">
-                        <i [class]="selectedOption.value"></i>
-                        <span>{{ selectedOption.label }}</span>
-                    </div>
-                </ng-template>
-                <ng-template pTemplate="item" let-option>
-                    <div class="flex align-items-center gap-2">
-                        <i [class]="option.value"></i>
-                        <span>{{ option.label }}</span>
-                    </div>
-                </ng-template>
-            </p-select>
+            [modal]="true" [style]="{ width: '40rem' }" styleClass="ticket-detail-modal">
+    
+    <div class="flex flex-column gap-4 py-2">
+        <div class="field">
+            <label for="gname">Workspace Name</label>
+            <input pInputText id="gname" [(ngModel)]="selectedGroup.name" placeholder="e.g. Engineering, Sales, DevOps" required />
         </div>
-        <div class="col-4 p-0 p-field">
-            <label class="font-bold block mb-2 text-sm text-600">Color</label>
-            <input pInputText type="color" [(ngModel)]="selectedGroup.color" style="height: 41px; padding: 4px; cursor: pointer;" />
+
+        <div class="field">
+            <label for="gdesc">Description & Purpose</label>
+            <textarea pInputTextarea id="gdesc" [(ngModel)]="selectedGroup.description" rows="3" class="custom-textarea" placeholder="Explain what this security context is for..."></textarea>
+        </div>
+
+        <div class="grid m-0 gap-4">
+            <div class="field col-7 p-0">
+                <label>Visual Identity (Icon)</label>
+                <p-select [options]="availableIcons" [(ngModel)]="selectedGroup.icon" optionLabel="label" optionValue="value" appendTo="body" class="w-full">
+                    <ng-template pTemplate="selectedItem" let-selectedOption>
+                        <div class="flex align-items-center gap-2">
+                            <i [class]="selectedOption.value"></i>
+                            <span>{{ selectedOption.label }}</span>
+                        </div>
+                    </ng-template>
+                    <ng-template pTemplate="item" let-option>
+                        <div class="flex align-items-center gap-2">
+                            <i [class]="option.value"></i>
+                            <span>{{ option.label }}</span>
+                        </div>
+                    </ng-template>
+                </p-select>
+            </div>
+            
+            <div class="field col-4 p-0">
+                <label>Context Color</label>
+                <div class="flex align-items-center gap-2">
+                    <input type="color" [(ngModel)]="selectedGroup.color" style="width: 50px; height: 38px; border-radius: 8px; border: 1px solid #cbd5e1; padding: 2px; cursor: pointer;" />
+                    <span class="text-xs font-mono text-500">{{selectedGroup.color}}</span>
+                </div>
+            </div>
         </div>
     </div>
 
     <ng-template pTemplate="footer">
-      <p-button label="Dismiss" [text]="true" (click)="groupVisible = false" />
-      <p-button label="Persist Workspace" icon="pi pi-cloud-upload" (click)="saveGroup()" [disabled]="!selectedGroup.name" [rounded]="true" />
+      <p-button label="Dismiss" severity="secondary" [outlined]="true" (onClick)="groupVisible = false" />
+      <p-button label="Persist Workspace" icon="pi pi-cloud-upload" (onClick)="saveGroup()" [disabled]="!selectedGroup.name" />
     </ng-template>
   </p-dialog>
 

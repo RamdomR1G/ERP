@@ -273,3 +273,113 @@
     display: block;
     margin-bottom: 0.65rem !important;
 }
+
+/* ── PREMIUM MODAL SYNC (Shared with Tickets/Dashboard) ── */
+.ticket-detail-modal {
+    border-radius: 16px !important;
+    overflow: hidden;
+}
+
+.ticket-detail-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 2rem;
+    padding: 0.5rem;
+}
+
+@media (max-width: 991px) {
+    .ticket-detail-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.detail-main {
+    display: flex;
+    flex-direction: column;
+}
+
+.detail-sidebar {
+    background: #f8fafc;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.field label {
+    font-weight: 700;
+    color: #334155;
+    font-size: 0.85rem;
+}
+
+.custom-textarea {
+    padding: 0.75rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #fff;
+    color: #1e293b;
+    font-family: inherit;
+    font-size: 0.95rem;
+    resize: vertical;
+    min-height: 80px;
+    transition: all 0.2s;
+}
+
+.custom-textarea:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px #6366f120;
+    outline: none;
+}
+
+.field-readonly {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    font-size: 0.85rem;
+}
+
+.field-readonly .label {
+    color: #64748b;
+    font-weight: 650;
+}
+
+.field-readonly .value {
+    color: #1e293b;
+    font-weight: 600;
+}
+
+.pbac-context-row-mini {
+    background: white;
+    padding: 0.75rem;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.security-access-scroller {
+    max-height: 350px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.workspace-assignment-box {
+    border: 1px solid #e2e8f0;
+    background: #fcfcfd;
+}
+
+::ng-deep .p-multiselect-sm .p-multiselect-label {
+    padding: 0.4rem 0.6rem !important;
+    font-size: 0.85rem !important;
+}
+
+::ng-deep .p-multiselect-sm .p-chip {
+    padding: 2px 8px !important;
+    font-size: 0.7rem !important;
+}

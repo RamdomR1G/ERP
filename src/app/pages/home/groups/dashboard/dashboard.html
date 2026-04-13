@@ -28,7 +28,7 @@
           <p-button icon="pi pi-th-large" [severity]="viewMode === 'kanban' ? 'primary' : 'secondary'" [text]="true" (click)="viewMode = 'kanban'" pTooltip="Kanban View" />
           <p-button icon="pi pi-list" [severity]="viewMode === 'list' ? 'primary' : 'secondary'" [text]="true" (click)="viewMode = 'list'" pTooltip="List View" />
       </div>
-      <p-button *appHasPermission="'tickets:add'" label="New Ticket" icon="pi pi-plus" (onClick)="newTicket()" styleClass="p-button-raised"></p-button>
+      <p-button *appHasPermission="'ticket:add'" label="New Ticket" icon="pi pi-plus" (onClick)="newTicket()" styleClass="p-button-raised"></p-button>
     </div>
   </div>
 
@@ -312,7 +312,7 @@
     </div>
   </div>
 
-  <!-- NEW / EDIT TICKET MODAL -->
+  <!-- NEW / EDIT TICKET MODAL (Synced with Tickets Component) -->
   <p-dialog [header]="editingTicketId ? 'Ticket #' + editingTicketId : 'New Ticket'" [(visible)]="visible" [style]="{ width: '55rem' }" [modal]="true" styleClass="ticket-detail-modal">
     <div class="ticket-detail-grid">
       
@@ -327,28 +327,26 @@
           <textarea id="desc" [(ngModel)]="newTicketDescription" rows="4" class="w-full custom-textarea" [disabled]="!canEditFull()"></textarea>
         </div>
 
-        @if (editingTicketRef) {
-          <div class="comments-section mt-4">
-            <h4>Comments & Activity</h4>
-            <div class="comments-list">
-              @for (comment of editingTicketRef.comments; track comment.date + $index) {
-                <div class="comment-item">
-                  <div class="comment-header">
-                    <strong>{{comment.author}}</strong>
-                    <span class="comment-date">{{comment.date}}</span>
-                  </div>
-                  <div class="comment-text">{{comment.text}}</div>
+        <div class="comments-section mt-4">
+          <h4>Comments & Activity</h4>
+          <div class="comments-list">
+            @for (comment of (editingTicketRef?.comments || []); track comment.date + $index) {
+              <div class="comment-item">
+                <div class="comment-header">
+                  <strong class="comment-author">{{comment.author}}</strong>
+                  <span class="comment-date">{{comment.date}}</span>
                 </div>
-              } @empty {
-                <div class="empty-state-small">No comments yet.</div>
-              }
-            </div>
-            <div class="add-comment mt-3" style="display: flex; gap: 0.5rem;">
-              <input pInputText placeholder="Add a comment..." [(ngModel)]="newCommentText" class="w-full" (keyup.enter)="addComment()" />
-              <p-button icon="pi pi-send" (onClick)="addComment()" [disabled]="!newCommentText.trim()"></p-button>
-            </div>
+                <div class="comment-text">{{comment.text}}</div>
+              </div>
+            } @empty {
+              <div class="empty-state-small">No comments yet.</div>
+            }
           </div>
-        }
+          <div class="add-comment mt-3" style="display: flex; gap: 0.5rem;">
+            <input pInputText placeholder="Add a comment..." [(ngModel)]="newCommentText" class="w-full" (keyup.enter)="addComment()" />
+            <p-button icon="pi pi-send" (onClick)="addComment()" [disabled]="!newCommentText.trim()"></p-button>
+          </div>
+        </div>
       </div>
 
       <!-- SIDEBAR / RIGHT COLUMN -->
@@ -366,6 +364,8 @@
           <p-select [options]="priorities" [(ngModel)]="newTicketPriority" optionLabel="name" optionValue="name" placeholder="Select Priority" class="w-full" appendTo="body" [disabled]="!canEditFull()"></p-select>
         </div>
         
+        <p-divider></p-divider>
+
         @if (editingTicketRef) {
           <div class="field-readonly mt-2">
             <span class="label">Created By:</span>
@@ -375,9 +375,9 @@
             <span class="label">Created On:</span>
             <span class="value">{{editingTicketRef.created_on | date:'shortDate'}}</span>
           </div>
-          <div class="field-readonly">
+          <div class="field-readonly" *ngIf="editingTicketRef.deadline">
             <span class="label">Deadline:</span>
-            <span class="value">{{editingTicketRef.deadline || 'No deadline'}}</span>
+            <span class="value" style="color: #ef4444; font-weight: bold;">{{editingTicketRef.deadline | date:'shortDate'}}</span>
           </div>
           
           <div class="history-section mt-4">
@@ -399,7 +399,7 @@
     </div>
 
     <ng-template pTemplate="footer">
-      <p-button label="Close" severity="secondary" [outlined]="true" (onClick)="visible = false" />
+      <p-button label="Discard" severity="secondary" [outlined]="true" (onClick)="visible = false" />
       <p-button [label]="editingTicketId ? 'Save Changes' : 'Create'" icon="pi pi-check" (onClick)="saveTicket()" [disabled]="!newTicketTitle || !newTicketTitle.trim()" />
     </ng-template>
   </p-dialog>

@@ -1,26 +1,18 @@
 <nav class="sidebar flex flex-column justify-content-between h-full" [class.collapsed]="collapsed">
   <div class="menu-items">
-    @for (item of menuItems; track item.label) {
-      @if (canShowMenuItem(item)) {
-        <div class="menu-item" (click)="navigate(item.route)">
-          <i [class]="item.icon"></i>
-          @if (!collapsed) {
-            <span>{{ item.label }}</span>
-          }      
-        </div>
-      }
+    @for (item of visibleMenuItems(); track item.label) {
+      <div class="menu-item" (click)="navigate(item.route)">
+        <i [class]="item.icon"></i>
+        @if (!collapsed) {
+          <span>{{ item.label }}</span>
+        }      
+      </div>
     }
   </div>
 
   <div class="bottom-actions mb-4">
-    <div class="menu-item logout" (click)="onLogout()">
-        <i class="pi pi-sign-out"></i>
-        @if (!collapsed) {
-            <span>Sign Out</span>
-        }
-    </div>
     @if (!collapsed) {
-        <div class="version text-center text-xs mt-2 text-400">v1.1.0 Premium</div>
+        <div class="version text-center text-xs mt-auto">v1.1.0 Premium</div>
     }
   </div>
 </nav>

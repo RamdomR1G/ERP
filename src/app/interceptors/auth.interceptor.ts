@@ -11,14 +11,16 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
   const token = authService.getToken();
 
-  // Si tenemos un token, clonamos la petición y añadimos la cabecera Authorization
+  // Si tenemos un token, clonamos la petición y añadimos las cabeceras requeridas
   let finalReq = req;
-  if (token) {
-    finalReq = req.clone({
-      setHeaders: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+  const activeGroup = authService.getActiveGroup();
+  
+  const headers: any = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  if (activeGroup?.id) headers['x-group-id'] = activeGroup.id;
+
+  if (Object.keys(headers).length > 0) {
+    finalReq = req.clone({ setHeaders: headers });
   }
 
   return next(finalReq).pipe(

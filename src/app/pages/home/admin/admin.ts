@@ -12,6 +12,7 @@ import { Tabs, TabList, Tab, TabPanels, TabPanel } from 'primeng/tabs';
 import { Tooltip } from 'primeng/tooltip';
 import { AuthService, AppUser, UserGroup } from '../../../services/auth.service';
 import { GroupService } from '../../../services/group.service';
+import { DividerModule } from 'primeng/divider';
 import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 import { forkJoin } from 'rxjs';
 
@@ -34,7 +35,8 @@ import { forkJoin } from 'rxjs';
     Select, 
     MultiSelect, 
     Tooltip,
-    HasPermissionDirective
+    HasPermissionDirective,
+    DividerModule
   ],
   templateUrl: './admin.html',
   styleUrl: './admin.css'
@@ -79,11 +81,11 @@ export class AdminComponent implements OnInit {
   // Lista completa de permisos granulares para el ERP
   allPermissions = [
     // TICKETS
-    'tickets:view', 'tickets:add', 'tickets:edit', 'tickets:delete', 'tickets:move', 'tickets:comment',
+    'ticket:view', 'ticket:add', 'ticket:edit', 'ticket:delete', 'ticket:move', 'ticket:comment', 'ticket:edit_state',
     // USUARIOS
-    'users:view', 'users:manage', 'users:add', 'users:edit', 'users:delete',
+    'user:view', 'user:manage', 'user:add', 'user:edit', 'user:delete',
     // GRUPOS / WORKSPACES
-    'groups:view', 'groups:manage', 'groups:add', 'groups:edit', 'groups:delete',
+    'group:view', 'group:manage', 'group:add', 'group:edit', 'group:delete',
     // GLOBAL (TODOS LOS PERMISOS)
     '*'
   ];
@@ -124,6 +126,7 @@ export class AdminComponent implements OnInit {
         role: 'User', 
         status: 'Active', 
         group_ids: [],
+        permissions: [],
         group_permissions: {} 
     };
     this.userVisible = true;

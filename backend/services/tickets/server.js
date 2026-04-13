@@ -8,7 +8,6 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SER
 
 fastify.register(cors);
 
-// TICKETS CRUD ROUTES
 // TICKETS CRUD (Safe-routing versions)
 const getTicketsHandler = async (request, reply) => {
     const { group_id } = request.query;
@@ -81,8 +80,8 @@ fastify.patch('/tickets/:id/status', patchStatusHandler);
 
 const start = async () => {
     try {
-        await fastify.listen({ port: 3003, host: '0.0.0.0' });
-        console.log('Tickets Service running on port 3003');
+        await fastify.listen({ port: 3002, host: '0.0.0.0' });
+        console.log('Tickets Service running on port 3002');
     } catch (err) {
         fastify.log.error(err);
         process.exit(1);

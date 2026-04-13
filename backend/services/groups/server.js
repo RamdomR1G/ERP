@@ -1,4 +1,5 @@
-require('dotenv').config({ path: '../../.env' });
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 const fastify = require('fastify')({ logger: true, ignoreTrailingSlash: true });
 const cors = require('@fastify/cors');
 const { createClient } = require('@supabase/supabase-js');
@@ -89,8 +90,8 @@ fastify.get('/groups/permissions', getPermsHandler);
 
 const start = async () => {
     try {
-        await fastify.listen({ port: 3002, host: '0.0.0.0' });
-        console.log('Groups Service running on port 3002');
+        await fastify.listen({ port: 3003, host: '0.0.0.0' });
+        console.log('Groups Service running on port 3003');
     } catch (err) {
         fastify.log.error(err);
         process.exit(1);

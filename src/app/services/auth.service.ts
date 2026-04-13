@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
@@ -45,7 +45,7 @@ export class AuthService {
 
   // ── ESTADO DEL GRUPO DE TRABAJO ───────────────────────────────────────
   private availableGroups: UserGroup[] = [];
-  private activeGroup: UserGroup | null = null;
+  private activeGroup = signal<UserGroup | null>(null);
 
   // ── COOKIE HELPERS ─────────────────────────────
   private setCookie(name: string, value: string, days: number = 1) {
@@ -99,11 +99,13 @@ export class AuthService {
   setPermissions(permissionsObject: any) {
     this.permissionService.setPermissions(permissionsObject);
     // Al cambiar de usuario/permisos, por seguridad cerramos el grupo activo
-    this.activeGroup = null; 
+    this.activeGroup.set(null); 
     sessionStorage.setItem('mockPermsMap', JSON.stringify(permissionsObject));
   }
 
   hasPermission(permissionName: string, flexible: boolean = false): boolean {
+    const user = this.getCurrentUser();
+    if (user?.role === 'Admin') return true;
     return this.permissionService.hasPermission(permissionName, flexible);
   }
 
@@ -167,6 +169,7 @@ export class AuthService {
     this.token = null;
     sessionStorage.clear();
     this.currentUserData = null;
+    this.activeGroup.set(null);
     this.permissionService.clearPermissions();
   }
 
@@ -178,6 +181,7 @@ export class AuthService {
         role: user.role,
         group_ids: user.group_ids, // Multiple groups insertion
         status: user.status,
+        permissions: user.permissions || [],
         group_permissions: user.group_permissions
     };
     return this.http.post(this.apiUrl, payload);
@@ -190,6 +194,7 @@ export class AuthService {
         role: updatedUser.role,
         group_ids: updatedUser.group_ids,
         status: updatedUser.status,
+        permissions: updatedUser.permissions || [],
         group_permissions: updatedUser.group_permissions
     };
     if (updatedUser.password) {
@@ -214,13 +219,16 @@ export class AuthService {
   }
 
   setActiveGroup(group: UserGroup | null) {
-    this.activeGroup = group;
+    this.activeGroup.set(group);
     if (group) {
         this.permissionService.refreshPermissionsForGroup(group.id);
     }
   }
 
   getActiveGroup(): UserGroup | null {
-    return this.activeGroup;
+    return this.activeGroup();
   }
+
+  // Signal version for reactive components
+  public activeGroupSignal = this.activeGroup.asReadonly();
 }
