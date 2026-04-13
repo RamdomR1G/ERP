@@ -58,6 +58,7 @@ export class AdminComponent implements OnInit {
   // ── FORMS STATE ────────────────────────────────
   userVisible: boolean = false;
   groupVisible: boolean = false;
+  isSaving: boolean = false;
   
   selectedUser: Partial<AppUser> = {};
   selectedGroup: Partial<UserGroup> = {};
@@ -127,29 +128,69 @@ export class AdminComponent implements OnInit {
         status: 'Active', 
         group_ids: [],
         permissions: [],
-        group_permissions: {} 
+        group_permissions: {}
     };
-    this.userVisible = true;
+    console.log('[Admin] Preparing new user...');
+    setTimeout(() => {
+        this.userVisible = true;
+        this.cdr.detectChanges();
+    }, 0);
   }
 
   editUser(user: AppUser) {
+    console.log('[Admin] Editing user RAW data:', user);
     this.selectedUser = JSON.parse(JSON.stringify(user)); // Deep clone
-    if (!this.selectedUser.group_permissions) {
-        this.selectedUser.group_permissions = {};
+    this.isSaving = false; // Reset state
+    
+    // Safety bridge & Defensive Normalization (Plural to Singular)
+    if (!this.selectedUser.group_permissions) this.selectedUser.group_permissions = {};
+    if (!this.selectedUser.permissions) this.selectedUser.permissions = [];
+    if (!this.selectedUser.group_ids) this.selectedUser.group_ids = [];
+
+    // ENSURE keys for all groups exist to facilitate direct binding
+    this.selectedUser.group_ids.forEach(gid => {
+        if (!this.selectedUser.group_permissions![gid]) {
+            this.selectedUser.group_permissions![gid] = [];
+        }
+    });
+
+    // DEFENSIVE: Convert any 'users:view' to 'user:view' for checkboxes to be marked
+    this.selectedUser.permissions = this.selectedUser.permissions.map(p => p === 'users:view' ? 'user:view' : p);
+    
+    for (const gid in this.selectedUser.group_permissions) {
+        if (Array.isArray(this.selectedUser.group_permissions[gid])) {
+            this.selectedUser.group_permissions[gid] = this.selectedUser.group_permissions[gid].map(p => p === 'users:view' ? 'user:view' : p);
+        }
     }
-    this.userVisible = true;
+
+    console.log('[Admin] SelectedUser state after init & normalization:', this.selectedUser);
+    
+    setTimeout(() => {
+        this.userVisible = true;
+        this.cdr.detectChanges();
+    }, 0);
   }
 
   saveUser() {
     if (!this.selectedUser.name || !this.selectedUser.email) return;
+
+    this.isSaving = true; // Lock state for dialog stability
+    console.log('[Admin] Saving User. Final Permissions Array:', this.selectedUser.permissions);
+    console.log('[Admin] Saving User. Group Permissions Map:', this.selectedUser.group_permissions);
 
     const obs$ = this.selectedUser.id 
         ? this.authService.updateUser(this.selectedUser as AppUser)
         : this.authService.addUser(this.selectedUser as AppUser);
 
     obs$.subscribe(() => {
+        // 1. First, request dialog closure
         this.userVisible = false;
-        this.refreshData();
+        
+        // 2. Wait for dialogue to be removed from DOM before refreshing table
+        setTimeout(() => {
+            this.refreshData();
+            this.cdr.detectChanges();
+        }, 150);
     });
   }
 
@@ -161,12 +202,18 @@ export class AdminComponent implements OnInit {
   // ── GROUP CRUD ─────────────────────────────────
   newGroup() {
     this.selectedGroup = { name: '', description: '', icon: 'pi pi-folder', color: '#6366f1' };
-    this.groupVisible = true;
+    setTimeout(() => {
+        this.groupVisible = true;
+        this.cdr.detectChanges();
+    }, 0);
   }
 
   editGroup(group: UserGroup) {
     this.selectedGroup = JSON.parse(JSON.stringify(group));
-    this.groupVisible = true;
+    setTimeout(() => {
+        this.groupVisible = true;
+        this.cdr.detectChanges();
+    }, 0);
   }
 
   saveGroup() {
@@ -225,7 +272,13 @@ export class AdminComponent implements OnInit {
       if (!this.selectedUser.group_permissions) {
           this.selectedUser.group_permissions = {};
       }
-      this.selectedUser.group_permissions[groupId] = perms;
-      this.cdr.markForCheck(); // Ensure UI reflects change if needed
+      
+      // Force change detection by creating a new object reference
+      this.selectedUser.group_permissions = {
+          ...this.selectedUser.group_permissions,
+          [groupId]: perms
+      };
+      
+      this.cdr.detectChanges();
   }
 }

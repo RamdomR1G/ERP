@@ -137,7 +137,8 @@
   </div>
 
   <!-- USER DIALOG (Synced with Premium Design) -->
-  <p-dialog [(visible)]="userVisible" [header]="selectedUser.id ? 'Identity & Security Settings' : 'New Enterprise Member'" 
+  <p-dialog [(visible)]="userVisible" 
+            [header]="isSaving ? (selectedUser.id ? 'Saving Security Settings...' : 'Creating Enterprise Member...') : (selectedUser.id ? 'Identity & Security Settings' : 'New Enterprise Member')"
             [modal]="true" [style]="{ width: '60rem' }" styleClass="ticket-detail-modal">
     
     <div class="ticket-detail-grid" *ngIf="selectedUser">
@@ -184,9 +185,21 @@
                 <p-select [options]="availableRoles" [(ngModel)]="selectedUser.role" optionLabel="label" optionValue="value" appendTo="body" />
             </div>
 
+            <div class="field mb-4">
+                <span class="section-label-mini">System Global Permissions</span>
+                <p-multiSelect [options]="allPermissions" 
+                               [(ngModel)]="selectedUser.permissions" 
+                               placeholder="Set system-wide access" 
+                               appendTo="body" 
+                               display="chip"
+                               styleClass="p-multiselect-sm mt-2" />
+                <p class="text-xs text-400 mt-1 italic">Permissions applied regardless of group context.</p>
+            </div>
+
             <p-divider></p-divider>
 
             <div class="security-access-scroller mt-4">
+                <span class="section-label-mini mb-3 block">Contextual Workspace PBAC</span>
                 @if (selectedUser.group_ids && selectedUser.group_ids.length > 0) {
                     <div class="flex flex-column gap-3">
                         @for (groupId of selectedUser.group_ids; track groupId) {
@@ -196,10 +209,9 @@
                                     <span class="text-xs font-bold text-700 uppercase">{{ getGroupName(groupId) }}</span>
                                 </div>
                                 <p-multiSelect [options]="allPermissions" 
-                                               [ngModel]="getGroupPerms(groupId)"
-                                               (ngModelChange)="updateGroupPerms(groupId, $event)"
-                                               placeholder="Set access"
-                                               appendTo="body"
+                                               [(ngModel)]="selectedUser.group_permissions![groupId]"
+                                               placeholder="Set access" 
+                                               appendTo="body" 
                                                display="chip"
                                                styleClass="p-multiselect-sm" />
                             </div>

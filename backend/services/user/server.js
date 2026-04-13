@@ -65,7 +65,7 @@ const getUsersHandler = async (request, reply) => {
 
     if (!user_id || !role) return reply.status(401).send({ error: 'Identity headers missing' });
 
-    let query = supabase.from('users').select('id, name, email, role, group_ids, status, joined_date, permissions');
+    let query = supabase.from('users').select('id, name, email, role, group_ids, group_permissions, status, joined_date, permissions');
 
     // Admin sees all
     if (role === 'Admin') {

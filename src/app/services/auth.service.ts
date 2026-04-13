@@ -179,11 +179,12 @@ export class AuthService {
         email: user.email,
         password: user.password,
         role: user.role,
-        group_ids: user.group_ids, // Multiple groups insertion
+        group_ids: user.group_ids,
         status: user.status,
         permissions: user.permissions || [],
         group_permissions: user.group_permissions
     };
+    console.log('[AuthService] Adding user with payload:', payload);
     return this.http.post(this.apiUrl, payload);
   }
 
@@ -200,6 +201,7 @@ export class AuthService {
     if (updatedUser.password) {
       payload.password = updatedUser.password;
     }
+    console.log('[AuthService] Updating user with payload:', payload);
     return this.http.put(`${this.apiUrl}/${updatedUser.id}`, payload);
   }
 
