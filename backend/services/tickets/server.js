@@ -19,20 +19,31 @@ const getTicketsHandler = async (request, reply) => {
 
     let query = supabase.from('tickets').select('*, assigned_user:users!assigned_to(name), creator:users!created_by(name)');
     
-    // Admin sees everything (can filter by group_id)
+    // SECURITY & CONTEXT LOGIC
     if (role === 'Admin') {
+        // Admins can see everything, but respect context if provided
         if (group_id) query = query.eq('group_id', group_id);
     } 
-    // Regular users: isolation
     else {
         let userGroups = [];
         try { userGroups = JSON.parse(userGroupsString); } catch (e) {}
 
-        if (Array.isArray(userGroups) && userGroups.length > 0) {
-            query = query.or(`group_id.in.(${userGroups.join(',')}),assigned_to.eq.${user_id},created_by.eq.${user_id}`);
+        if (group_id) {
+            // CONTEXTUAL VIEW (Dashboard)
+            // If they belong to the group, show all group tickets. 
+            // If not, only show if they are author/assignee within that group.
+            if (userGroups.includes(group_id)) {
+                query = query.eq('group_id', group_id);
+            } else {
+                query = query.eq('group_id', group_id).or(`assigned_to.eq.${user_id},created_by.eq.${user_id}`);
+            }
         } else {
-            // NO GROUPS -> Only see tickets directly assigned or created
-            query = query.or(`assigned_to.eq.${user_id},created_by.eq.${user_id}`);
+            // GLOBAL VIEW
+            if (userGroups.length > 0) {
+                query = query.or(`group_id.in.(${userGroups.join(',')}),assigned_to.eq.${user_id},created_by.eq.${user_id}`);
+            } else {
+                query = query.or(`assigned_to.eq.${user_id},created_by.eq.${user_id}`);
+            }
         }
     }
     const { data, error } = await query;
