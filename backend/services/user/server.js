@@ -93,10 +93,17 @@ fastify.get('/', getUsersHandler);
 fastify.get('/users', getUsersHandler);
 
 const postUserHandler = async (request, reply) => {
-    const payload = request.body;
+    const userData = { ...request.body };
     const salt = await bcrypt.genSalt(10);
-    const password_hash = await bcrypt.hash(payload.password, salt);
-    const { data, error } = await supabase.from('users').insert([{ ...payload, password_hash, permissions: payload.permissions || [] }]).select('id').single();
+    userData.password_hash = await bcrypt.hash(userData.password, salt);
+    
+    // DISCARD the plain password to avoid Supabase schema error (column doesn't exist)
+    delete userData.password;
+    
+    // Ensure permissions is at least an empty array if missing
+    if (!userData.permissions) userData.permissions = [];
+
+    const { data, error } = await supabase.from('users').insert([userData]).select('id').single();
     if (error) return reply.status(500).send({ error: error.message });
     return reply.status(201).send({ statusCode: 201, data: { id: data.id } });
 };

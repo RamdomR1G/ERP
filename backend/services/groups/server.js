@@ -79,6 +79,9 @@ fastify.put('/groups/:id', putGroupHandler);
 
 // DELETE Group
 const deleteGroupHandler = async (request, reply) => {
+    const { id } = request.params;
+    const { error } = await supabase.from('groups').delete().eq('id', id);
+    if (error) return reply.status(500).send({ statusCode: 500, intOpCode: 'SxGR500', data: null, error: error.message });
     return { statusCode: 200, intOpCode: 'SxGR200', data: { message: 'Deleted' } };
 };
 fastify.delete('/:id', deleteGroupHandler);
