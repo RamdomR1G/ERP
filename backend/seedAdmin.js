@@ -15,7 +15,7 @@ async function seedAdmin() {
     const allPermissions = [
         'group:view', 'group:add', 'group:edit', 'group:delete',
         'user:view', 'user:add', 'user:edit', 'user:delete',
-        'ticket:view', 'ticket:add', 'ticket:edit', 'ticket:delete', 'ticket:edit_state'
+        'ticket:view', 'ticket:add', 'ticket:edit', 'ticket:delete', 'ticket:move'
     ];
 
     const { data, error } = await supabase

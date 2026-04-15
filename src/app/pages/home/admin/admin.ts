@@ -82,7 +82,7 @@ export class AdminComponent implements OnInit {
   // Lista completa de permisos granulares para el ERP
   allPermissions = [
     // TICKETS
-    'ticket:view', 'ticket:add', 'ticket:edit', 'ticket:delete', 'ticket:move', 'ticket:comment', 'ticket:edit_state',
+    'ticket:view', 'ticket:add', 'ticket:edit', 'ticket:delete', 'ticket:move', 'ticket:comment',
     // USUARIOS
     'user:view', 'user:manage', 'user:add', 'user:edit', 'user:delete',
     // GRUPOS / WORKSPACES

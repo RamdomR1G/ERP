@@ -20,7 +20,7 @@ fastify.register(jwt, {
 const PERMISSION_MAP = {
     'POST:/api/tickets': 'ticket:add',
     'PUT:/api/tickets': 'ticket:edit',
-    'PATCH:/api/tickets': 'ticket:edit_state',
+    'PATCH:/api/tickets': 'ticket:move',
     'DELETE:/api/tickets': 'ticket:delete',
     'POST:/api/groups': 'group:add',
     'PUT:/api/groups': 'group:edit',

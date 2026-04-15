@@ -357,7 +357,7 @@
         </div>
         <div class="field">
           <label for="assign">Assignee</label>
-          <p-select [options]="systemUsers" [(ngModel)]="newTicketAssignedTo" optionLabel="name" optionValue="id" placeholder="Select User" class="w-full" appendTo="body" [disabled]="!canEditFull()"></p-select>
+          <p-select [options]="groupMembers" [(ngModel)]="newTicketAssignedTo" optionLabel="name" optionValue="id" placeholder="Select User" class="w-full" appendTo="body" [disabled]="!canEditFull()"></p-select>
         </div>
         <div class="field">
           <label for="priority">Priority</label>
