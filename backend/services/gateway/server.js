@@ -5,12 +5,24 @@ require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 const proxy = require('@fastify/http-proxy');
 const jwt = require('@fastify/jwt');
 const cors = require('@fastify/cors');
+const rateLimit = require('@fastify/rate-limit');
 
 // REGISTROS
 fastify.register(cors, {
     origin: '*', // Permitir peticiones desde el Angular (4200)
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'x-group-id']
+});
+fastify.register(rateLimit, {
+    max: 100,
+    timeWindow: '1 minute',
+    errorResponseBuilder: (request, context) => {
+        return {
+            statusCode: 429,
+            error: 'Too Many Requests',
+            message: `Demasiadas peticiones. Por favor, intenta de nuevo en ${context.after}.`
+        };
+    }
 });
 fastify.register(jwt, {
     secret: process.env.JWT_SECRET || 'secret-key'
@@ -113,7 +125,34 @@ fastify.setNotFoundHandler((request, reply) => {
         statusCode: 404,
         error: 'Not Found',
         message: `Route ${request.method}:${request.url} not found in Gateway`
+        //statuscode y apidata
     });
+});
+
+// UNIVERSAL JSON SCHEMA WRAPPER
+fastify.addHook('onSend', async (request, reply, payload) => {
+    const contentType = reply.getHeader('content-type');
+    // Solo procesar si es JSON y no es un flujo vacío
+    if (payload && contentType && contentType.includes('application/json')) {
+        try {
+            const body = JSON.parse(payload);
+            
+            // Si ya tiene el esquema (evitar doble envoltura), devolver original
+            if (body && typeof body === 'object' && 'statusCode' in body && 'data' in body) {
+                return payload;
+            }
+
+            const wrapper = {
+                statusCode: reply.statusCode,
+                intOpCode: reply.statusCode >= 400 ? 0 : 1,
+                data: body
+            };
+            return JSON.stringify(wrapper);
+        } catch (e) {
+            return payload;
+        }
+    }
+    return payload;
 });
 
 const start = async () => {

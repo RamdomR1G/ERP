@@ -152,7 +152,15 @@
                 <div class="card-body">
                     <div class="card-header-meta">
                         <span class="ticket-id">#{{ ticket.id }}</span>
-                        <p-tag [value]="ticket.priority" [severity]="getTicketSeverity(ticket.priority)" styleClass="premium-mini-tag" />
+                        <div class="flex gap-1 align-items-center">
+                            @if (ticket.deadline) {
+                                <span class="deadline-pill" [pTooltip]="'Deadline: ' + (ticket.deadline | date:'shortDate')">
+                                    <i class="pi pi-calendar"></i>
+                                    {{ ticket.deadline | date:'MMM d' }}
+                                </span>
+                            }
+                            <p-tag [value]="ticket.priority" [severity]="getTicketSeverity(ticket.priority)" styleClass="premium-mini-tag" />
+                        </div>
                     </div>
                     
                     <h4 class="ticket-title">{{ ticket.title }}</h4>
@@ -364,6 +372,11 @@
           <p-select [options]="priorities" [(ngModel)]="newTicketPriority" optionLabel="name" optionValue="name" placeholder="Select Priority" class="w-full" appendTo="body" [disabled]="!canEditFull()"></p-select>
         </div>
         
+        <div class="field">
+          <label for="deadline">Deadline (Final Date)</label>
+          <p-datepicker [(ngModel)]="newTicketDeadline" [showIcon]="true" dateFormat="dd/mm/yy" class="w-full" appendTo="body" placeholder="Select Deadline" [disabled]="!canEditFull()"></p-datepicker>
+        </div>
+        
         <p-divider></p-divider>
 
         @if (editingTicketRef) {
@@ -399,8 +412,8 @@
     </div>
 
     <ng-template pTemplate="footer">
-      <p-button label="Discard" severity="secondary" [outlined]="true" (onClick)="visible = false" />
-      <p-button [label]="editingTicketId ? 'Save Changes' : 'Create'" icon="pi pi-check" (onClick)="saveTicket()" [disabled]="!newTicketTitle || !newTicketTitle.trim()" />
+      <p-button label="Discard" severity="secondary" [outlined]="true" (onClick)="visible = false" [disabled]="isSaving" />
+      <p-button [label]="editingTicketId ? 'Save Changes' : 'Create'" [icon]="isSaving ? 'pi pi-spin pi-spinner' : 'pi pi-check'" (onClick)="saveTicket()" [disabled]="isSaving || !newTicketTitle || !newTicketTitle.trim()" />
     </ng-template>
   </p-dialog>
 </div>

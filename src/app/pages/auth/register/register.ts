@@ -14,7 +14,6 @@ import { AuthService, AppUser } from '../../../services/auth.service';
   selector: 'app-register',
   standalone: true,
   imports: [FormsModule, ButtonModule, CardModule, InputTextModule, PasswordModule, ToastModule, Header],
-  providers: [MessageService],
   templateUrl: './register.html',
   styleUrls: ['./register.css']
 })

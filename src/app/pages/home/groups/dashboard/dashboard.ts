@@ -14,6 +14,8 @@ import { InputIconModule } from 'primeng/inputicon';
 import { TooltipModule } from 'primeng/tooltip';
 import { ChartModule } from 'primeng/chart';
 import { DividerModule } from 'primeng/divider';
+import { DatePicker } from 'primeng/datepicker';
+import { MessageService } from 'primeng/api';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
 import { AuthService, AppUser } from '../../../../services/auth.service';
@@ -41,7 +43,8 @@ import { HasPermissionDirective } from '../../../../directives/has-permission.di
     TooltipModule, 
     HasPermissionDirective, 
     ChartModule,
-    DividerModule
+    DividerModule,
+    DatePicker
   ],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css'
@@ -53,6 +56,7 @@ export class GroupDashboardComponent implements OnInit {
   private ticketService = inject(TicketService);
   private groupService = inject(GroupService);
   private cdr = inject(ChangeDetectorRef);
+  private messageService = inject(MessageService);
 
   // Core Properties (Restored)
   public groupId: string | null = null;
@@ -71,7 +75,9 @@ export class GroupDashboardComponent implements OnInit {
   newTicketDescription: string = '';
   newTicketStatus: string = '';
   newTicketPriority: string = '';
+  newTicketDeadline: Date | null = null;
   newTicketAssignedTo: string | null = null;
+  isSaving: boolean = false;
 
   statuses: {name: string}[] = [
     { name: 'Pending' },
@@ -185,11 +191,12 @@ export class GroupDashboardComponent implements OnInit {
             // Actualizamos localmente
             member.group_ids = updatedGroupIds;
             this.filterGroupMembers();
+            this.messageService.add({ severity: 'success', summary: 'Member Removed', detail: `${member.name} has been removed from the team.` });
             this.cdr.detectChanges();
         },
         error: (err) => {
             console.error('Error removing member:', err);
-            alert('No se pudo eliminar al usuario del grupo.');
+            this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Could not remove member from group.' });
         }
     });
   }
@@ -295,7 +302,15 @@ export class GroupDashboardComponent implements OnInit {
       this.ticketService.updateTicket(item.id, { 
           status: newStatus,
           history: historyLog
-      }).subscribe();
+      }).subscribe({
+          next: () => {
+              this.messageService.add({ severity: 'info', summary: 'Status Updated', detail: `Ticket #${item.id} is now ${newStatus}` });
+          },
+          error: () => {
+              this.messageService.add({ severity: 'error', summary: 'Update Failed', detail: 'Could not sync status change with server.' });
+              this.loadTickets(); // Revert on failure
+          }
+      });
     }
   }
 
@@ -346,6 +361,7 @@ export class GroupDashboardComponent implements OnInit {
     this.newTicketDescription = ticket.description || '';
     this.newTicketStatus = ticket.status;
     this.newTicketPriority = ticket.priority;
+    this.newTicketDeadline = ticket.deadline ? new Date(ticket.deadline) : null;
     this.newTicketAssignedTo = ticket.assigned_to || null;
     this.newCommentText = '';
     this.visible = true;
@@ -400,7 +416,10 @@ export class GroupDashboardComponent implements OnInit {
     }
   }
 
-  saveTicket() {
+   saveTicket() {
+    if (this.isSaving) return;
+    this.isSaving = true;
+    
     const today = new Date().toISOString();
     
     if (this.editingTicketId && this.editingTicketRef) {
@@ -413,6 +432,7 @@ export class GroupDashboardComponent implements OnInit {
           payload.title = this.newTicketTitle;
           payload.description = this.newTicketDescription;
           payload.priority = this.newTicketPriority || 'Medium';
+          payload.deadline = this.newTicketDeadline ? this.newTicketDeadline.toISOString() : undefined;
           payload.assigned_to = this.newTicketAssignedTo || undefined;
       }
 
@@ -426,9 +446,17 @@ export class GroupDashboardComponent implements OnInit {
 
       payload.history = historyLog;
 
-      this.ticketService.updateTicket(this.editingTicketId, payload).subscribe(() => {
-          this.loadTickets();
-          this.visible = false;
+      this.ticketService.updateTicket(this.editingTicketId, payload).subscribe({
+          next: () => {
+              this.isSaving = false;
+              this.messageService.add({ severity: 'success', summary: 'Updated', detail: 'Ticket updated successfully.' });
+              this.loadTickets();
+              this.visible = false;
+          },
+          error: (err) => {
+              this.isSaving = false;
+              this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to update ticket.' });
+          }
       });
 
     } else {
@@ -441,6 +469,7 @@ export class GroupDashboardComponent implements OnInit {
         description: this.newTicketDescription,
         status: this.newTicketStatus || 'Pending',
         priority: this.newTicketPriority || 'Medium',
+        deadline: this.newTicketDeadline ? this.newTicketDeadline.toISOString() : undefined,
         assigned_to: this.newTicketAssignedTo || undefined,
         created_by: this.currentUserId,
         comments: [],
@@ -449,12 +478,15 @@ export class GroupDashboardComponent implements OnInit {
 
       this.ticketService.createTicket(newTicket).subscribe({
           next: () => {
+              this.isSaving = false;
+              this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Ticket created successfully.' });
               this.loadTickets();
               this.visible = false;
           },
           error: (err) => {
+              this.isSaving = false;
               console.error("Failed to create ticket:", err);
-              alert("Error al crear ticket: " + (err.error?.error || err.message));
+              this.messageService.add({ severity: 'error', summary: 'Creation Failed', detail: (err.error?.error || err.message) });
           }
       });
     }
@@ -467,6 +499,7 @@ export class GroupDashboardComponent implements OnInit {
     this.newTicketDescription = '';
     this.newTicketStatus = '';
     this.newTicketPriority = '';
+    this.newTicketDeadline = null;
     this.newTicketAssignedTo = null;
     this.newCommentText = '';
   }

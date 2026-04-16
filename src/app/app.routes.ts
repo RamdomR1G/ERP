@@ -21,7 +21,6 @@ export const routes: Routes = [
     children: [
       { path: '', loadComponent: () => import('./pages/home/home').then(m => m.HomeComponent) },
       { path: 'dashboard', loadComponent: () => import('./pages/home/dashboard/dashboard').then(m => m.DashboardComponent) },
-      { path: 'products', loadComponent: () => import('./pages/home/products/products').then(m => m.ProductsComponent) },
       { path: 'admin', loadComponent: () => import('./pages/home/admin/admin').then(m => m.AdminComponent) },
       
       // Rutas aseguradas con el Guard Interceptor (Security)
@@ -36,12 +35,6 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/home/groups/groups').then(m => m.GroupsComponent),
         canActivate: [authGuard],
         data: { requiredPermission: 'group:view' }
-      },
-      { 
-        path: 'tickets', 
-        loadComponent: () => import('./pages/home/tickets/tickets').then(m => m.TicketsComponent),
-        canActivate: [authGuard],
-        data: { requiredPermission: 'ticket:view' }
       },
       {
         path: 'profile',

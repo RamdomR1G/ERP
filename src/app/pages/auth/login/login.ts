@@ -15,7 +15,6 @@ import { AuthService } from '../../../services/auth.service';
   selector: 'app-login',
   standalone: true,
   imports: [FormsModule, IftaLabelModule, InputTextModule, CardModule, PasswordModule, ButtonModule, ToastModule, Header],
-  providers: [MessageService],
   templateUrl: './login.html',
   styleUrls: ['./login.css']
 })
@@ -45,7 +44,8 @@ export class LoginComponent {
           { id: 'g01', name: 'Equipo Dev', icon: 'pi pi-code' },
           { id: 'g02', name: 'Soporte', icon: 'pi pi-headphones' }
         ]);
-
+        
+        this.messageService.add({severity: 'success', summary: 'Bienvenido', detail: 'Inicio de sesión exitoso.'});
         this.router.navigate(['/home/dashboard']);
       },
       error: (err) => {
