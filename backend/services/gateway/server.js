@@ -108,33 +108,32 @@ fastify.addHook('onRequest', async (request, reply) => {
         // VALIDACION DE PERMISOS (PBAC)
         const method = request.method;
         const segments = request.url.split('?')[0].split('/').filter(Boolean);
-        // Ex: /api/tickets/20 becomes /api/tickets
         const basePath = segments.length >= 2 ? `/${segments[0]}/${segments[1]}` : request.url.split('?')[0];
         const routeKey = `${method}:${basePath}`;
         const requiredPerm = PERMISSION_MAP[routeKey];
 
         if (requiredPerm) {
-            // Extraer groupId del header o query para validación contextual
             const groupId = request.headers['x-group-id'] || request.query.groupId;
             
-            // 1. Si es Admin real, ignorar contexto de grupo para estas rutas globales
+            // 1. Admin Global
             if (decoded.role === 'Admin') {
-                // Permitido
+                return; // Validado
             } 
-            // 2. Si no es Admin, requiere contexto de grupo obligatoriamente
+            // 2. Faltan headers de contexto
             else if (!groupId) {
-                return reply.code(400).send({ error: 'Falta contexto de grupo (x-group-id)' });
+                return reply.code(400).send({ error: 'Falta contexto de grupo (x-group-id req)' });
             } 
-            // 3. Validar permisos dentro del grupo
+            // 3. Validar permisos en el grupo
             else {
-                const userPerms = decoded.group_permissions[groupId] || [];
+                const userPerms = (decoded.group_permissions && decoded.group_permissions[groupId]) || [];
                 if (!userPerms.includes(requiredPerm) && !userPerms.includes('*')) {
                     return reply.code(403).send({ error: 'Prohibido', message: `No tienes permiso: ${requiredPerm}` });
                 }
             }
         }
     } catch (err) {
-        reply.code(401).send({ error: 'No autorizado', message: 'Token inválido o expirado' });
+        // ERROR CRÍTICO EVITADO: Añadido "return" para evitar que el proxy continúe a pesar de la falla de autorización
+        return reply.code(401).send({ error: 'No autorizado', message: 'Token o contexto inválido' });
     }
 });
 

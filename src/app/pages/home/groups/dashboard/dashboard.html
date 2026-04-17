@@ -420,7 +420,9 @@
         </div>
         <div class="right-actions" style="display: flex; gap: 0.5rem;">
           <p-button label="Discard" severity="secondary" [outlined]="true" (onClick)="visible = false" [disabled]="isSaving" />
-          <p-button [label]="editingTicketId ? 'Save Changes' : 'Create'" [icon]="isSaving ? 'pi pi-spin pi-spinner' : 'pi pi-check'" (onClick)="saveTicket()" [disabled]="isSaving || !newTicketTitle || !newTicketTitle.trim() || !newTicketAssignedTo || !newTicketDeadline" />
+          <ng-container *appHasPermission="editingTicketId ? 'ticket:edit' : 'ticket:add'">
+            <p-button [label]="editingTicketId ? 'Save Changes' : 'Create'" [icon]="isSaving ? 'pi pi-spin pi-spinner' : 'pi pi-check'" (onClick)="saveTicket()" [disabled]="isSaving || !newTicketTitle || !newTicketTitle.trim() || !newTicketAssignedTo || !newTicketDeadline" />
+          </ng-container>
         </div>
       </div>
     </ng-template>
