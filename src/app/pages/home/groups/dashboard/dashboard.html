@@ -351,8 +351,8 @@
             }
           </div>
           <div class="add-comment mt-3" style="display: flex; gap: 0.5rem;">
-            <input pInputText placeholder="Add a comment..." [(ngModel)]="newCommentText" class="w-full" (keyup.enter)="addComment()" />
-            <p-button icon="pi pi-send" (onClick)="addComment()" [disabled]="!newCommentText.trim()"></p-button>
+            <input pInputText placeholder="Add a comment..." [(ngModel)]="newCommentText" class="w-full" (keyup.enter)="addComment()" [disabled]="!authService.hasPermission('ticket:comment')" />
+            <p-button icon="pi pi-send" (onClick)="addComment()" [disabled]="!newCommentText.trim() || !authService.hasPermission('ticket:comment')"></p-button>
           </div>
         </div>
       </div>

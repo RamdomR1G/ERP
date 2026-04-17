@@ -55,7 +55,7 @@ import { HasPermissionDirective } from '../../../../directives/has-permission.di
 export class GroupDashboardComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private authService = inject(AuthService);
+  public authService = inject(AuthService);
   private ticketService = inject(TicketService);
   private groupService = inject(GroupService);
   private cdr = inject(ChangeDetectorRef);
@@ -303,7 +303,7 @@ export class GroupDashboardComponent implements OnInit {
       }
 
       // Backend Persistence
-      this.ticketService.updateTicket(item.id, { 
+      this.ticketService.patchTicket(item.id, { 
           status: newStatus,
           history: historyLog
       }).subscribe({
@@ -372,9 +372,11 @@ export class GroupDashboardComponent implements OnInit {
   }
 
   canEditFull(): boolean {
-    if (!this.editingTicketRef) return true; // new ticket mode
-    if (this.authService.hasPermission('ticket:edit')) return true; // admins can do everything
-    return this.currentUserId === this.editingTicketRef.created_by;
+    if (!this.editingTicketRef) return true; // new ticket mode (creation button already protected by *appHasPermission)
+    
+    // STRICT PBAC: Only users with 'ticket:edit' can modify details. 
+    // Creator/Assignee exception removed for detail editing.
+    return this.authService.hasPermission('ticket:edit');
   }
 
   canEditPartial(): boolean {
@@ -394,6 +396,11 @@ export class GroupDashboardComponent implements OnInit {
   }
 
   addComment() {
+    if (!this.authService.hasPermission('ticket:comment')) {
+      this.messageService.add({ severity: 'error', summary: 'Prohibido', detail: 'No tienes permiso para comentar (ticket:comment).' });
+      return;
+    }
+
     if (this.newCommentText.trim() && this.editingTicketRef && this.editingTicketId) {
       const today = new Date().toISOString();
       const newComment = {

@@ -81,7 +81,6 @@ fastify.addHook('onSend', async (request, reply, payload) => {
 const PERMISSION_MAP = {
     'POST:/api/tickets': 'ticket:add',
     'PUT:/api/tickets': 'ticket:edit',
-    'PATCH:/api/tickets': 'ticket:move',
     'DELETE:/api/tickets': 'ticket:delete',
     'POST:/api/groups': 'group:add',
     'PUT:/api/groups': 'group:edit',
@@ -126,9 +125,19 @@ fastify.addHook('onRequest', async (request, reply) => {
             // 3. Validar permisos en el grupo
             else {
                 const userPerms = (decoded.group_permissions && decoded.group_permissions[groupId]) || [];
+                
+                // PROPAGATE PERMISSIONS: Enable microservice to check assignee exceptions
+                request.headers['x-user-permissions'] = JSON.stringify(userPerms);
+
                 if (!userPerms.includes(requiredPerm) && !userPerms.includes('*')) {
                     return reply.code(403).send({ error: 'Prohibido', message: `No tienes permiso: ${requiredPerm}` });
                 }
+            }
+        } else {
+            // IF NO REQUIRED PERM IN MAP, still propagate permissions if authenticated
+            const groupId = request.headers['x-group-id'] || request.query.groupId;
+            if (groupId && decoded.group_permissions && decoded.group_permissions[groupId]) {
+                request.headers['x-user-permissions'] = JSON.stringify(decoded.group_permissions[groupId]);
             }
         }
     } catch (err) {

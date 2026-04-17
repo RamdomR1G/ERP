@@ -71,15 +71,7 @@ fastify.post('/tickets', postTicketHandler);
 
 const putTicketHandler = async (request, reply) => {
     const { id } = request.params;
-    const user_id = request.headers['x-user-id'];
-    const role = request.headers['x-user-role'];
     const updates = request.body;
-    if (role !== 'Admin' && user_id) {
-        const { data: ticket } = await supabase.from('tickets').select('assigned_to, created_by').eq('id', id).single();
-        if (ticket && (ticket.assigned_to !== user_id && ticket.created_by !== user_id)) {
-            return reply.status(403).send({ error: 'Solo puedes editar tus propios tickets' });
-        }
-    }
     const { error } = await supabase.from('tickets').update(updates).eq('id', id);
     if (error) return reply.status(500).send({ error: error.message });
     return { statusCode: 200, data: { message: 'Updated' } };
@@ -87,15 +79,35 @@ const putTicketHandler = async (request, reply) => {
 fastify.put('/:id', putTicketHandler);
 fastify.put('/tickets/:id', putTicketHandler);
 
-const patchStatusHandler = async (request, reply) => {
+const patchTicketHandler = async (request, reply) => {
     const { id } = request.params;
-    const { status } = request.body;
-    const { error } = await supabase.from('tickets').update({ status }).eq('id', id);
-    if (error) return reply.status(500).send({ error: error.message });
+    const userId = request.headers['x-user-id'];
+    const role = request.headers['x-user-role'];
+    const perms = JSON.parse(request.headers['x-user-permissions'] || '[]');
+
+    // 1. Fetch current ticket to check assignee
+    const { data: ticket, error: fetchError } = await supabase.from('tickets').select('assigned_to').eq('id', id).single();
+    if (fetchError || !ticket) return reply.status(404).send({ error: 'Ticket not found' });
+
+    // 2. Security Check (Requirement: Owner/Assignee OR ticket:move)
+    const isAssignee = ticket.assigned_to === userId;
+    const canMoveAll = role === 'Admin' || perms.includes('ticket:move') || perms.includes('*');
+
+    if (!canMoveAll && !isAssignee) {
+        return reply.code(403).send({ 
+            error: 'Prohibido', 
+            message: 'Solo puedes mover tus propios tickets asignados. Contacta a un supervisor para mover otros.' 
+        });
+    }
+
+    // 3. Update
+    const { error: updateError } = await supabase.from('tickets').update(request.body).eq('id', id);
+    if (updateError) return reply.status(500).send({ error: updateError.message });
+
     return { statusCode: 200, data: { message: 'Updated' } };
 };
-fastify.patch('/:id/status', patchStatusHandler);
-fastify.patch('/tickets/:id/status', patchStatusHandler);
+fastify.patch('/:id', patchTicketHandler);
+fastify.patch('/tickets/:id', patchTicketHandler);
 
 const deleteTicketHandler = async (request, reply) => {
     const { id } = request.params;

@@ -49,4 +49,8 @@ export class TicketService {
   deleteTicket(id: string): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${id}`);
   }
+
+  patchTicket(id: string, updates: Partial<Ticket>): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/${id}`, updates);
+  }
 }
