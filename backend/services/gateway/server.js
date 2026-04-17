@@ -6,6 +6,9 @@ const proxy = require('@fastify/http-proxy');
 const jwt = require('@fastify/jwt');
 const cors = require('@fastify/cors');
 const rateLimit = require('@fastify/rate-limit');
+const { createClient } = require('@supabase/supabase-js');
+
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 // REGISTROS
 fastify.register(cors, {
@@ -26,6 +29,52 @@ fastify.register(rateLimit, {
 });
 fastify.register(jwt, {
     secret: process.env.JWT_SECRET || 'secret-key'
+});
+
+// GLOBAL API METRICS TRACKER AND JSON WRAPPER
+fastify.addHook('onSend', async (request, reply, payload) => {
+    // 1. REGISTRAR MÉTRICAS (Envió Seguro)
+    try {
+        const method = request.method || 'UNKNOWN';
+        const endpoint = request.url ? request.url.split('?')[0] : '/';
+        const status_code = parseInt(reply.statusCode) || 200;
+        const response_time_ms = parseFloat(reply.getResponseTime ? reply.getResponseTime() : 0.0) || 0.0;
+
+        supabase.from('api_metrics').insert([{
+            endpoint: endpoint,
+            method: method,
+            status_code: status_code,
+            response_time_ms: response_time_ms
+        }]).then(({ error }) => {
+            if (error) console.error("[Metrics DB Error]:", error.message);
+            else console.log(`[Metrics Captured]: ${method} ${endpoint} - ${status_code} (${response_time_ms.toFixed(2)}ms)`);
+        }).catch(() => {});
+    } catch (e) {
+        console.error("[Metrics Sync Exception]:", e.message);
+    }
+
+    const contentType = reply.getHeader('content-type');
+    // Solo procesar si es JSON y no es un flujo vacío
+    if (payload && contentType && contentType.includes('application/json')) {
+        try {
+            const body = JSON.parse(payload);
+            
+            // Si ya tiene el esquema (evitar doble envoltura), devolver original
+            if (body && typeof body === 'object' && 'statusCode' in body && 'data' in body) {
+                return payload;
+            }
+
+            const wrapper = {
+                statusCode: reply.statusCode,
+                intOpCode: reply.statusCode >= 400 ? 0 : 1,
+                data: body
+            };
+            return JSON.stringify(wrapper);
+        } catch (e) {
+            return payload;
+        }
+    }
+    return payload;
 });
 
 // CONFIGURACION DE PERMISOS REQUERIDOS POR RUTA
@@ -58,8 +107,10 @@ fastify.addHook('onRequest', async (request, reply) => {
         
         // VALIDACION DE PERMISOS (PBAC)
         const method = request.method;
-        const path = request.url.split('?')[0];
-        const routeKey = `${method}:${path}`;
+        const segments = request.url.split('?')[0].split('/').filter(Boolean);
+        // Ex: /api/tickets/20 becomes /api/tickets
+        const basePath = segments.length >= 2 ? `/${segments[0]}/${segments[1]}` : request.url.split('?')[0];
+        const routeKey = `${method}:${basePath}`;
         const requiredPerm = PERMISSION_MAP[routeKey];
 
         if (requiredPerm) {
@@ -129,31 +180,6 @@ fastify.setNotFoundHandler((request, reply) => {
     });
 });
 
-// UNIVERSAL JSON SCHEMA WRAPPER
-fastify.addHook('onSend', async (request, reply, payload) => {
-    const contentType = reply.getHeader('content-type');
-    // Solo procesar si es JSON y no es un flujo vacío
-    if (payload && contentType && contentType.includes('application/json')) {
-        try {
-            const body = JSON.parse(payload);
-            
-            // Si ya tiene el esquema (evitar doble envoltura), devolver original
-            if (body && typeof body === 'object' && 'statusCode' in body && 'data' in body) {
-                return payload;
-            }
-
-            const wrapper = {
-                statusCode: reply.statusCode,
-                intOpCode: reply.statusCode >= 400 ? 0 : 1,
-                data: body
-            };
-            return JSON.stringify(wrapper);
-        } catch (e) {
-            return payload;
-        }
-    }
-    return payload;
-});
 
 const start = async () => {
     try {

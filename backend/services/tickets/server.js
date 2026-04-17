@@ -97,6 +97,15 @@ const patchStatusHandler = async (request, reply) => {
 fastify.patch('/:id/status', patchStatusHandler);
 fastify.patch('/tickets/:id/status', patchStatusHandler);
 
+const deleteTicketHandler = async (request, reply) => {
+    const { id } = request.params;
+    const { error } = await supabase.from('tickets').delete().eq('id', id);
+    if (error) return reply.status(500).send({ error: error.message });
+    return { statusCode: 200, data: { message: 'Deleted' } };
+};
+fastify.delete('/:id', deleteTicketHandler);
+fastify.delete('/tickets/:id', deleteTicketHandler);
+
 const start = async () => {
     try {
         await fastify.listen({ port: 3002, host: '0.0.0.0' });

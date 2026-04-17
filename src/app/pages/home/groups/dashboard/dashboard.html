@@ -412,8 +412,18 @@
     </div>
 
     <ng-template pTemplate="footer">
-      <p-button label="Discard" severity="secondary" [outlined]="true" (onClick)="visible = false" [disabled]="isSaving" />
-      <p-button [label]="editingTicketId ? 'Save Changes' : 'Create'" [icon]="isSaving ? 'pi pi-spin pi-spinner' : 'pi pi-check'" (onClick)="saveTicket()" [disabled]="isSaving || !newTicketTitle || !newTicketTitle.trim()" />
+      <div style="display: flex; justify-content: space-between; width: 100%;">
+        <div class="left-actions">
+          <ng-container *ngIf="editingTicketId">
+            <p-button *appHasPermission="'ticket:delete'" label="Delete" severity="danger" icon="pi pi-trash" [outlined]="true" (onClick)="confirmDelete()" [disabled]="isSaving" />
+          </ng-container>
+        </div>
+        <div class="right-actions" style="display: flex; gap: 0.5rem;">
+          <p-button label="Discard" severity="secondary" [outlined]="true" (onClick)="visible = false" [disabled]="isSaving" />
+          <p-button [label]="editingTicketId ? 'Save Changes' : 'Create'" [icon]="isSaving ? 'pi pi-spin pi-spinner' : 'pi pi-check'" (onClick)="saveTicket()" [disabled]="isSaving || !newTicketTitle || !newTicketTitle.trim() || !newTicketAssignedTo || !newTicketDeadline" />
+        </div>
+      </div>
     </ng-template>
   </p-dialog>
 </div>
+<p-confirmDialog [style]="{width: '50vw'}"></p-confirmDialog>

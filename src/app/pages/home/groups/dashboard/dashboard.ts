@@ -15,7 +15,8 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ChartModule } from 'primeng/chart';
 import { DividerModule } from 'primeng/divider';
 import { DatePicker } from 'primeng/datepicker';
-import { MessageService } from 'primeng/api';
+import { MessageService, ConfirmationService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
 import { AuthService, AppUser } from '../../../../services/auth.service';
@@ -44,8 +45,10 @@ import { HasPermissionDirective } from '../../../../directives/has-permission.di
     HasPermissionDirective, 
     ChartModule,
     DividerModule,
-    DatePicker
+    DatePicker,
+    ConfirmDialogModule
   ],
+  providers: [ConfirmationService],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css'
 })
@@ -57,6 +60,7 @@ export class GroupDashboardComponent implements OnInit {
   private groupService = inject(GroupService);
   private cdr = inject(ChangeDetectorRef);
   private messageService = inject(MessageService);
+  private confirmationService = inject(ConfirmationService);
 
   // Core Properties (Restored)
   public groupId: string | null = null;
@@ -418,6 +422,12 @@ export class GroupDashboardComponent implements OnInit {
 
    saveTicket() {
     if (this.isSaving) return;
+
+    if (!this.newTicketTitle || !this.newTicketTitle.trim() || !this.newTicketAssignedTo || !this.newTicketDeadline) {
+      this.messageService.add({severity: 'warn', summary: 'Campos Requeridos', detail: 'El Título, la Persona Asignada y la Fecha Final son obligatorios.'});
+      return;
+    }
+
     this.isSaving = true;
     
     const today = new Date().toISOString();
@@ -490,6 +500,31 @@ export class GroupDashboardComponent implements OnInit {
           }
       });
     }
+  }
+
+  confirmDelete() {
+    if (!this.editingTicketId) return;
+
+    this.confirmationService.confirm({
+      message: 'Are you sure you want to delete this ticket? This action cannot be undone.',
+      header: 'Confirm Deletion',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Yes, Delete',
+      acceptButtonStyleClass: 'p-button-danger',
+      rejectLabel: 'Cancel',
+      accept: () => {
+        this.ticketService.deleteTicket(this.editingTicketId!).subscribe({
+          next: () => {
+            this.messageService.add({ severity: 'success', summary: 'Deleted', detail: 'Ticket deleted successfully.' });
+            this.loadTickets();
+            this.visible = false;
+          },
+          error: (err) => {
+            this.messageService.add({ severity: 'error', summary: 'Error', detail: err.error?.error || 'Failed to delete ticket.' });
+          }
+        });
+      }
+    });
   }
 
   resetForm() {
